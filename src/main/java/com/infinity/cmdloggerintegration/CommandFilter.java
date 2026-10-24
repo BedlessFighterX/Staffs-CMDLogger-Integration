@@ -6,15 +6,13 @@ import java.util.Locale;
 final class CommandFilter {
     private CommandFilter() { }
 
-    static boolean shouldIgnore(String line, List<String> ignored) {
-        return matchesRoot(line, ignored);
-    }
+    static boolean shouldIgnore(String line, List<String> ignored) { return matchesRoot(line, ignored); }
 
     static boolean matchesRoot(String line, List<String> roots) {
         if (line == null || roots == null || roots.isEmpty()) return false;
         String value = line.trim().toLowerCase(Locale.ROOT);
         if (value.startsWith("/")) value = value.substring(1);
-        int space = value.indexOf(' ');
+        int space = firstWhitespace(value);
         String root = space < 0 ? value : value.substring(0, space);
         int colon = root.indexOf(':');
         String plain = colon < 0 ? root : root.substring(colon + 1);
@@ -32,8 +30,23 @@ final class CommandFilter {
         if (commandLine == null || !matchesRoot(commandLine, redactedRoots)) return commandLine;
         String value = commandLine.trim();
         if (value.startsWith("/")) value = value.substring(1);
-        int space = value.indexOf(' ');
+        int space = firstWhitespace(value);
         String root = space < 0 ? value : value.substring(0, space);
         return "/" + root + (space < 0 ? "" : " [arguments redacted]");
+    }
+
+    static String redactAllArguments(String commandLine) {
+        if (commandLine == null) return null;
+        String value = commandLine.trim();
+        if (value.isEmpty()) return value;
+        if (value.startsWith("/")) value = value.substring(1);
+        int space = firstWhitespace(value);
+        String root = space < 0 ? value : value.substring(0, space);
+        return "/" + root + (space < 0 ? "" : " [arguments redacted]");
+    }
+
+    private static int firstWhitespace(String value) {
+        for (int i = 0; i < value.length(); i++) if (Character.isWhitespace(value.charAt(i))) return i;
+        return -1;
     }
 }
