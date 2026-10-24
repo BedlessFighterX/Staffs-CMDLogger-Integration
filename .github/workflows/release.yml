@@ -52,7 +52,7 @@ jobs:
           RUN_NUMBER: ${{ github.run_number }}
         run: |
           set -euo pipefail
-          VERSION="$(sed -n "s/^version = ['\\"]\\([^'\\"]*\\)['\\"].*/\\1/p" build.gradle | head -n 1)"
+          VERSION="$(awk -F"'" '/^version = / { print $2; exit }' build.gradle)"
           if [[ -z "$VERSION" ]]; then
             echo "::error::Could not read project version from build.gradle"
             exit 1
