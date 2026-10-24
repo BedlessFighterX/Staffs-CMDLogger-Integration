@@ -33,6 +33,7 @@ Existing configurations are retained and new default keys are merged on startup.
 - /cmdlogger reload — validate and reload configuration; invalid webhook URLs are rejected without replacing active settings. Requires cmdlogger.admin.
 - /cmdlogger status — show configuration, privacy, and delivery queue status; requires cmdlogger.admin.
 - /cmdlogger diagnostics — alias for detailed status and queue diagnostics; requires cmdlogger.admin.
+- /cmdlogger test — send a test embed to verify webhook delivery; requires cmdlogger.admin.
 - cmdlogger.staff — commands from this player are logged; defaults to operators.
 - cmdlogger.use — use the plugin command; defaults to everyone.
 - cmdlogger.admin — reload configuration, test webhook delivery, and inspect diagnostics; defaults to operators.
