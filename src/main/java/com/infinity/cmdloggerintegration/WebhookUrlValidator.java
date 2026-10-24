@@ -19,7 +19,7 @@ final class WebhookUrlValidator {
             if (!"discord.com".equalsIgnoreCase(host) &&
                     !"discordapp.com".equalsIgnoreCase(host)) return false;
             return uri.getPath() != null &&
-                    uri.getPath().matches("/api/webhooks/[0-9]{5,25}/[^/]+/?");
+                    uri.getPath().matches("/api/webhooks/[0-9]{5,25}/[A-Za-z0-9._-]{1,200}/?");
         } catch (IllegalArgumentException ex) {
             return false;
         }

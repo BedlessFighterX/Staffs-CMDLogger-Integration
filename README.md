@@ -14,16 +14,16 @@ This is a major compatibility change from the old Spigot 1.16 / Java 8 baseline.
 
     gradle clean test build
 
-The JAR is written to build/libs/CMDLoggerIntegration-3.1.0.jar. Gradle is the supported build system; Maven has been removed.
+The JAR is written to build/libs/CMDLoggerIntegration-3.2.0.jar. Gradle is the supported build system; Maven has been removed.
 
 ## Install and configure
 
 1. Back up the server and existing plugin config.
 2. Place the JAR in plugins/ and start the server once to generate config.
 3. Set webhook-url in plugins/CMDLoggerIntegration/config.yml. Treat it as a password; never commit or share it.
-4. Review ignored-commands (fully suppress a command), redacted-commands (record the root but redact all arguments), and ignored-players.
-5. For the strongest privacy, set redact-all-arguments: true. This records command roots but hides every argument, including arguments not covered by the default redaction list.
-6. Restart the server and grant cmdlogger.staff only to staff whose commands should be audited.
+4. The default redact-all-arguments: true setting records command roots while keeping every argument on the server. Set it to false only if your audit policy explicitly requires arguments.
+5. Review ignored-commands (fully suppress a command), redacted-commands (redact arguments for sensitive roots when global redaction is disabled), and ignored-players.
+6. Restart the server and grant cmdlogger.staff only to staff whose commands should be audited. Existing explicit config values are preserved during upgrades; change redact-all-arguments manually if you want the privacy-first setting on an older installation.
 
 Existing configurations are retained and new default keys are merged on startup. Review the generated defaults after upgrading.
 
@@ -48,7 +48,7 @@ Discord embeds can include the configured server name, world, operator status, a
 
 Command logs can contain passwords, tokens, personal data, or private arguments. The default redaction list covers common authentication roots, but plugin-specific commands and aliases still need review. redact-all-arguments: true is the safer setting if command arguments should never leave the server. ignored-players can exclude selected player names from logging. Use an access-controlled Discord channel, restrict filesystem access, and rotate the webhook immediately if it leaks.
 
-Webhook URLs are restricted to HTTPS Discord webhook endpoints. Redirects are disabled for webhook POSTs so payloads cannot be forwarded to a redirect target. Webhook credentials and remote response bodies are not printed in errors. Discord mentions are disabled in outgoing payloads to prevent command text from triggering notifications. Reload validates the candidate webhook URL before replacing active configuration.
+Webhook URLs are restricted to HTTPS Discord webhook endpoints. Redirects are disabled for webhook POSTs so payloads cannot be forwarded to a redirect target. Webhook credentials and remote response bodies are not printed in errors. Discord mentions are disabled in outgoing payloads and untrusted command text has Markdown/control characters sanitized to reduce spoofing. New installations redact all arguments by default. Reload validates the candidate webhook URL before replacing active configuration.
 
 ## Validation and limitations
 

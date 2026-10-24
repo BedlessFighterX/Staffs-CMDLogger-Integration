@@ -30,6 +30,8 @@ class WebhookUrlValidationTest {
         assertFalse(WebhookUrlValidator.isValid("https://discord.com/api/webhooks/not-a-number/token"));
         assertFalse(WebhookUrlValidator.isValid("https://discord.com/api/webhooks/123/token/extra"));
         assertFalse(WebhookUrlValidator.isValid("https://discord.com/api/webhooks/123456789012345678/token?next=https://evil.example"));
+        assertFalse(WebhookUrlValidator.isValid("https://discord.com/api/webhooks/123456789012345678/token%0aInjected"));
+        assertFalse(WebhookUrlValidator.isValid("https://discord.com/api/webhooks/123456789012345678/token with spaces"));
         assertFalse(WebhookUrlValidator.isValid("https://user@discord.com/api/webhooks/123456789012345678/token"));
     }
 }
