@@ -1,9 +1,11 @@
 package com.infinity.cmdloggerintegration;
 
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.awt.Color;
+import java.io.File;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -26,7 +28,6 @@ public final class CMDLoggerIntegration extends JavaPlugin {
             return;
         }
 
-        // Bound worker count and queue size so command bursts cannot create unlimited network tasks.
         deliveryExecutor = new ThreadPoolExecutor(
                 2, 2, 0L, TimeUnit.MILLISECONDS, new ArrayBlockingQueue<>(256), runnable -> {
                     Thread thread = new Thread(runnable, "CMDLogger-Webhook");
@@ -49,19 +50,31 @@ public final class CMDLoggerIntegration extends JavaPlugin {
     }
 
     private void applyMissingDefaults() {
-        // Merge newly introduced settings into existing configs without overwriting server customizations.
         getConfig().options().copyDefaults(true);
         saveConfig();
     }
 
-    void reloadSettings() {
+    /** Validate the candidate file before replacing live settings. */
+    boolean reloadSettings() {
+        File configFile = new File(getDataFolder(), "config.yml");
+        YamlConfiguration candidate = YamlConfiguration.loadConfiguration(configFile);
+        if (!WebhookUrlValidator.isValid(candidate.getString("webhook-url", ""))) return false;
         reloadConfig();
         applyMissingDefaults();
+        return isWebhookConfigured();
     }
 
     @Override
     public void onDisable() {
-        if (deliveryExecutor != null) deliveryExecutor.shutdownNow();
+        if (deliveryExecutor != null) {
+            deliveryExecutor.shutdown();
+            try {
+                if (!deliveryExecutor.awaitTermination(2, TimeUnit.SECONDS)) deliveryExecutor.shutdownNow();
+            } catch (InterruptedException ex) {
+                deliveryExecutor.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     boolean submitDelivery(Runnable task) {
@@ -77,6 +90,10 @@ public final class CMDLoggerIntegration extends JavaPlugin {
             return false;
         }
     }
+
+    int getQueueDepth() { return deliveryExecutor == null ? 0 : deliveryExecutor.getQueue().size(); }
+    int getQueueCapacity() { return 256; }
+    long getCompletedDeliveryTasks() { return deliveryExecutor == null ? 0 : deliveryExecutor.getCompletedTaskCount(); }
 
     String getEmbedTitle() {
         String title = getConfig().getString("embed.title", DEFAULT_TITLE);
