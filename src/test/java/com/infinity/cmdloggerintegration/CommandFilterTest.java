@@ -30,4 +30,9 @@ class CommandFilterTest {
         assertEquals("/login [arguments redacted]", CommandFilter.redactArguments("/login\tSecret123", Collections.singletonList("login")));
     }
     @Test void handlesNullGlobalRedactionInput() { assertNull(CommandFilter.redactAllArguments(null)); }
+
+    @Test void sanitizesDiscordMarkdownAndControlCharacters() {
+        assertEquals("/say \\*hello\\* \\@everyone", CommandFilter.sanitizeForDiscord("/say *hello* @everyone"));
+        assertEquals("/say hello world", CommandFilter.sanitizeForDiscord("/say hello\\nworld"));
+    }
 }
