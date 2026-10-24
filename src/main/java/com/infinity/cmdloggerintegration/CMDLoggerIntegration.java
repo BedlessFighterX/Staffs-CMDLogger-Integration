@@ -1,39 +1,36 @@
 package com.infinity.cmdloggerintegration;
 
-import org.bukkit.Bukkit;
-import org.bukkit.plugin.Plugin;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
-
-import java.util.Objects;
+import java.net.URI;
 
 public final class CMDLoggerIntegration extends JavaPlugin {
-
-    @Override
-    public void onEnable() {
-        // Plugin startup logic
-        getLogger().info("CMDLogger has been enabled successfully :)");
-
-        saveDefaultConfig();
-
-        String webhookURL = getConfig().getString("webhook-url");
-
-
-
-        getServer().getPluginManager().registerEvents(new ChatListener(this), this);
-        Objects.requireNonNull(getCommand("cmdlogger")).setExecutor(new MainCommand(this));
-
-        if (webhookURL == null || !webhookURL.startsWith("https://")) {
-            getLogger().warning("WebHook URL is null or it doesn't start with https://! Disabling plugin...");
-            Plugin plugin = Bukkit.getPluginManager().getPlugin("CMDLoggerIntegration");
-            getServer().getPluginManager().disablePlugin(plugin);
-
-        }
-
-    }
-
-    @Override
-    public void onDisable() {
-        // Plugin shutdown logic
-        getLogger().info("CMDLogger has been disabled successfully :(");
-    }
+ private static final String DEFAULT_TITLE = "Staff Command Logger";
+ private static final String DEFAULT_COLOR = "#020101";
+ @Override public void onEnable() {
+  saveDefaultConfig();
+  if (!isValidWebhookUrl(getConfig().getString("webhook-url", ""))) {
+   getLogger().severe("Invalid webhook-url. Configure a Discord webhook URL in config.yml; plugin disabled.");
+   getServer().getPluginManager().disablePlugin(this); return;
+  }
+  getServer().getPluginManager().registerEvents(new ChatListener(this), this);
+  PluginCommand command = getCommand("cmdlogger");
+  if (command == null) { getLogger().severe("Command cmdlogger is missing from plugin.yml; disabling plugin."); getServer().getPluginManager().disablePlugin(this); return; }
+  command.setExecutor(new MainCommand(this)); getLogger().info("CMDLoggerIntegration enabled.");
+ }
+ static boolean isValidWebhookUrl(String value) {
+  if (value == null || value.trim().isEmpty() || "your-webhook-url".equalsIgnoreCase(value.trim())) return false;
+  try {
+   URI uri = URI.create(value.trim()); String host = uri.getHost();
+   if (!"https".equalsIgnoreCase(uri.getScheme()) || host == null) return false;
+   boolean discordHost = "discord.com".equalsIgnoreCase(host) || "discordapp.com".equalsIgnoreCase(host);
+   return discordHost && uri.getPath() != null && uri.getPath().matches("/api/webhooks/[0-9]+/[^/]+/?");
+  } catch (IllegalArgumentException ex) { return false; }
+ }
+ String getEmbedTitle() { String title = getConfig().getString("embed.title", DEFAULT_TITLE); return title == null || title.trim().isEmpty() ? DEFAULT_TITLE : title.trim(); }
+ java.awt.Color getEmbedColor() {
+  String configured = getConfig().getString("embed.color", DEFAULT_COLOR);
+  try { return java.awt.Color.decode(configured == null ? DEFAULT_COLOR : configured.trim()); }
+  catch (NumberFormatException ex) { getLogger().warning("Invalid embed.color; using " + DEFAULT_COLOR + "."); return java.awt.Color.decode(DEFAULT_COLOR); }
+ }
 }
