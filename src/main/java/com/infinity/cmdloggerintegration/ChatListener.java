@@ -7,7 +7,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
 import java.io.IOException;
-import java.util.List;
 
 public final class ChatListener implements Listener {
     private final CMDLoggerIntegration plugin;
@@ -26,15 +25,16 @@ public final class ChatListener implements Listener {
         String safeCommand = CommandFilter.redactArguments(
                 commandLine, plugin.getConfig().getStringList("redacted-commands"));
 
-        // Read Bukkit state only on the server thread; network I/O runs asynchronously.
+        // Snapshot Bukkit state on the server thread; the bounded executor does network I/O.
         final String playerName = player.getName();
         final String worldName = player.getWorld().getName();
         final boolean operator = player.isOp();
         final String title = plugin.getEmbedTitle();
         final java.awt.Color color = plugin.getEmbedColor();
         final String webhookUrl = plugin.getConfig().getString("webhook-url", "");
+        final boolean showOperator = plugin.getConfig().getBoolean("embed.show-operator-status", true);
 
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+        plugin.submitDelivery(() -> {
             try {
                 DiscordWebhook webhook = new DiscordWebhook(webhookUrl);
                 webhook.setUsername("Staff Command Logger");
@@ -45,9 +45,7 @@ public final class ChatListener implements Listener {
                         .addField("🌍 World", truncate(worldName, 256), true)
                         .setFooter("CMDLoggerIntegration • Staff audit", null)
                         .setColor(color);
-                if (plugin.getConfig().getBoolean("embed.show-operator-status", true)) {
-                    embed.addField("🛡 Operator", operator ? "Yes" : "No", true);
-                }
+                if (showOperator) embed.addField("🛡 Operator", operator ? "Yes" : "No", true);
                 webhook.addEmbed(embed);
                 webhook.execute();
             } catch (IOException | IllegalArgumentException ex) {
