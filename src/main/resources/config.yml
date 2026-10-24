@@ -2,17 +2,26 @@
 # Prefer setting this privately and never commit a live webhook URL.
 webhook-url: 'your-webhook-url'
 
+# When enabled, every command is logged without its arguments.
+redact-all-arguments: false
+
+# Player names listed here are excluded from command logging (case-insensitive).
+ignored-players: []
+
 embed:
   title: 'Staff Command Audit'
   color: '#5865F2'
+  server-name: 'Minecraft Server'
+  show-server: true
+  show-world: true
+  show-timestamp: true
   show-operator-status: true
 
 # Root commands to exclude entirely. Matching ignores case, leading slash, namespace, and arguments.
 ignored-commands:
   - 'examplecommand1'
 
-# These commands are logged with their root only; all arguments are replaced with a redaction marker.
-# Add plugin-specific login, password, token, auth, and account-management commands used on your server.
+# These commands are logged with their root only; add plugin-specific secret-bearing commands.
 redacted-commands:
   - 'login'
   - 'register'
@@ -23,3 +32,10 @@ redacted-commands:
   - 'resetpassword'
   - 'auth'
   - 'token'
+  - 'password'
+  - 'passwd'
+  - '2fa'
+  - 'totp'
+  - 'email'
+  - 'verify'
+  - 'pin'

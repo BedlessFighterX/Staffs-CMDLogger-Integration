@@ -1,5 +1,5 @@
 name: CMDLoggerIntegration
-version: '3.0.0'
+version: '3.1.0'
 main: com.infinity.cmdloggerintegration.CMDLoggerIntegration
 api-version: '1.21'
 load: POSTWORLD
@@ -9,7 +9,7 @@ description: Secure, configurable staff command auditing with Discord embeds.
 commands:
   cmdlogger:
     description: View information, reload configuration, or inspect audit status.
-    usage: /cmdlogger [help|reload|status]
+    usage: /cmdlogger [help|reload|status|diagnostics|test]
     permission: cmdlogger.use
 permissions:
   cmdlogger.staff:
@@ -19,5 +19,5 @@ permissions:
     description: Allows use of the CMDLogger command.
     default: true
   cmdlogger.admin:
-    description: Allows reloading configuration and viewing plugin status.
+    description: Allows reloading configuration, testing webhook delivery, and viewing plugin diagnostics.
     default: op
