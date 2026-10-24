@@ -67,6 +67,7 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
             final String webhookUrl = plugin.getConfig().getString("webhook-url", "");
             final String title = plugin.getEmbedTitle();
             final java.awt.Color color = plugin.getEmbedColor();
+            final String requesterName = sender.getName();
             boolean accepted = plugin.submitDelivery(() -> {
                 try {
                     DiscordWebhook webhook = new DiscordWebhook(webhookUrl);
@@ -76,7 +77,7 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
                             .setTimestamp(Instant.now())
                             .setColor(color)
                             .addField("✅ Connection test", "The webhook is configured and CMDLogger can deliver audit events.", false)
-                            .addField("🧑‍💻 Requested by", sender.getName(), true)
+                            .addField("🧑‍💻 Requested by", requesterName, true)
                             .setFooter("CMDLoggerIntegration • Configuration test", null));
                     webhook.execute();
                     plugin.getLogger().info("Discord webhook connection test completed successfully.");
