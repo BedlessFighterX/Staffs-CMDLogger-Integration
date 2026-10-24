@@ -1,6 +1,6 @@
 # CMDLoggerIntegration
 
-A Paper plugin that forwards commands executed by players with the `cmdlogger.staff` permission to a configured Discord webhook, with configurable exclusions and argument redaction.
+A Paper plugin that forwards commands executed by players with the cmdlogger.staff permission to a configured Discord webhook, with configurable exclusions and argument redaction.
 
 ## Requirements
 
@@ -8,42 +8,49 @@ A Paper plugin that forwards commands executed by players with the `cmdlogger.st
 - Gradle 8.14.3 or GitHub Actions CI.
 - A privately configured Discord webhook URL.
 
-This is a major-version compatibility change from the old Spigot 1.16 / Java 8 baseline. Back up your server and verify on a staging server before upgrading.
+This is a major compatibility change from the old Spigot 1.16 / Java 8 baseline. Back up your server and verify on a staging server before upgrading.
 
 ## Build
 
-```sh
-gradle clean test build
-```
+    gradle clean test build
 
-The JAR is written to `build/libs/CMDLoggerIntegration-3.0.0.jar`. Gradle is the supported build system; Maven has been removed.
+The JAR is written to build/libs/CMDLoggerIntegration-3.1.0.jar. Gradle is the supported build system; Maven has been removed.
 
 ## Install and configure
 
 1. Back up the server and existing plugin config.
-2. Place the JAR in `plugins/` and start the server once to generate config.
-3. Set `webhook-url` in `plugins/CMDLoggerIntegration/config.yml`. Treat it as a password; never commit or share it.
-4. Review `ignored-commands` (fully suppress a command) and `redacted-commands` (record the root but redact all arguments).
-5. Restart the server and grant `cmdlogger.staff` only to staff whose commands should be audited.
+2. Place the JAR in plugins/ and start the server once to generate config.
+3. Set webhook-url in plugins/CMDLoggerIntegration/config.yml. Treat it as a password; never commit or share it.
+4. Review ignored-commands (fully suppress a command), redacted-commands (record the root but redact all arguments), and ignored-players.
+5. For the strongest privacy, set redact-all-arguments: true. This records command roots but hides every argument, including arguments not covered by the default redaction list.
+6. Restart the server and grant cmdlogger.staff only to staff whose commands should be audited.
+
+Existing configurations are retained and new default keys are merged on startup. Review the generated defaults after upgrading.
 
 ## Commands and permissions
 
-- `/cmdlogger help` — styled help.
-- `/cmdlogger reload` — reload config; requires `cmdlogger.admin`.
-- `/cmdlogger status` — show configuration status without revealing the webhook; requires `cmdlogger.admin`.
-- `cmdlogger.staff` — commands from this player are logged; defaults to operators.
-- `cmdlogger.use` — use the command; defaults to everyone.
+- /cmdlogger help — styled help.
+- /cmdlogger reload — validate and reload configuration; invalid webhook URLs are rejected without replacing active settings. Requires cmdlogger.admin.
+- /cmdlogger status — show configuration, privacy, and delivery queue status; requires cmdlogger.admin.
+- /cmdlogger diagnostics — alias for detailed status and queue diagnostics; requires cmdlogger.admin.
+- cmdlogger.staff — commands from this player are logged; defaults to operators.
+- cmdlogger.use — use the plugin command; defaults to everyone.
+- cmdlogger.admin — reload configuration and inspect diagnostics; defaults to operators.
 
 Tab completion only suggests administrative subcommands to senders with the admin permission.
 
+## Audit embeds and performance
+
+Discord embeds can include the configured server name, world, operator status, and event timestamp. Each is configurable under embed. Network calls run away from the game thread with bounded timeouts and a fixed-size queue. If the queue fills, new events are dropped and a warning is logged rather than allowing unbounded memory growth. Queue depth and completed tasks are visible in diagnostics.
+
 ## Security and privacy
 
-Command logs can contain passwords, tokens, personal data, or private arguments. The default redaction list covers common authentication roots, but **you must add the commands used by your installed plugins**. Unknown commands and aliases may still expose arguments. Use an access-controlled Discord channel, restrict filesystem access, and rotate the webhook immediately if it leaks.
+Command logs can contain passwords, tokens, personal data, or private arguments. The default redaction list covers common authentication roots, but plugin-specific commands and aliases still need review. redact-all-arguments: true is the safer setting if command arguments should never leave the server. ignored-players can exclude selected player names from logging. Use an access-controlled Discord channel, restrict filesystem access, and rotate the webhook immediately if it leaks.
 
-Webhook URLs are restricted to HTTPS Discord webhook endpoints; webhook credentials are never printed in the plugin's error messages. Discord mentions are disabled in outgoing payloads to prevent commands containing `@everyone` or role mentions from triggering notifications. Requests run off the main server thread with bounded connection/read timeouts. Delivery is not durable: network failures can still cause lost audit events, and this plugin does not yet implement a persistent retry queue.
+Webhook URLs are restricted to HTTPS Discord webhook endpoints. Redirects are disabled for webhook POSTs so payloads cannot be forwarded to a redirect target. Webhook credentials and remote response bodies are not printed in errors. Discord mentions are disabled in outgoing payloads to prevent command text from triggering notifications. Reload validates the candidate webhook URL before replacing active configuration.
 
-## Validation
+## Validation and limitations
 
-Run `gradle clean test build` before submitting changes. CI compiles against Java 21 and Paper 1.21.4, runs unit tests, and stores the built JAR as an Actions artifact. Versioned GitHub Releases are created by the release workflow when a matching `vX.Y.Z` tag is pushed.
+Run gradle clean test build before submitting changes. CI compiles against Java 21 and Paper 1.21.4 and runs unit tests. Releases are generated by the release workflow for master updates after the build succeeds.
 
-A code review cannot prove the absence of every vulnerability. Test against your exact server version and review any server-specific commands that handle secrets.
+Delivery is not durable: network failures, overload, and shutdown can lose audit events; there is no persistent retry queue. Bukkit's player command preprocess event does not observe every command dispatched by plugins or the console. A source review cannot prove that software is vulnerability-free. Test against your exact server version on a staging server before production deployment.
