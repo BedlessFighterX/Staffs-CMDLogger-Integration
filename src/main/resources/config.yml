@@ -1,8 +1,25 @@
-# Treat this URL as a secret; anyone who has it can post to the target channel.
+# Treat this URL as a secret; anyone who has it can post to the target Discord channel.
+# Prefer setting this privately and never commit a live webhook URL.
 webhook-url: 'your-webhook-url'
+
 embed:
-  title: 'Staff Commands Logger'
-  color: '#020101'
-# Root command names to exclude; matching is case-insensitive and ignores arguments.
+  title: 'Staff Command Audit'
+  color: '#5865F2'
+  show-operator-status: true
+
+# Root commands to exclude entirely. Matching ignores case, leading slash, namespace, and arguments.
 ignored-commands:
   - 'examplecommand1'
+
+# These commands are logged with their root only; all arguments are replaced with a redaction marker.
+# Add plugin-specific login, password, token, auth, and account-management commands used on your server.
+redacted-commands:
+  - 'login'
+  - 'register'
+  - 'l'
+  - 'log'
+  - 'changepassword'
+  - 'changepass'
+  - 'resetpassword'
+  - 'auth'
+  - 'token'
