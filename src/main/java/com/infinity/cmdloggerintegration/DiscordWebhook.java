@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +22,12 @@ public final class DiscordWebhook {
     public DiscordWebhook(String url) { this.url = url; }
     public void setUsername(String username) { this.username = username; }
     public void setTts(boolean tts) { this.tts = tts; }
-    public void addEmbed(EmbedObject embed) { if (embed != null) embeds.add(embed); }
+    public void addEmbed(EmbedObject embed) {
+        if (embed != null) {
+            if (embeds.size() >= 10) throw new IllegalArgumentException("Discord allows at most 10 embeds per message");
+            embeds.add(embed);
+        }
+    }
 
     public void execute() throws IOException {
         if (embeds.isEmpty()) throw new IllegalArgumentException("At least one embed is required");
@@ -28,7 +35,7 @@ public final class DiscordWebhook {
 
         StringBuilder body = new StringBuilder("{\"username\":").append(json(username))
                 .append(",\"tts\":").append(tts)
-                // Prevent command text containing @everyone, @here, or role mentions from pinging users.
+                // Command text must never be allowed to ping @everyone, @here, or roles.
                 .append(",\"allowed_mentions\":{\"parse\":[]},\"embeds\":[");
         for (int i = 0; i < embeds.size(); i++) {
             if (i > 0) body.append(',');
@@ -37,6 +44,9 @@ public final class DiscordWebhook {
             if (e.color != null) {
                 int rgb = (e.color.getRed() << 16) | (e.color.getGreen() << 8) | e.color.getBlue();
                 body.append(",\"color\":").append(rgb);
+            }
+            if (e.timestamp != null) {
+                body.append(",\"timestamp\":").append(json(DateTimeFormatter.ISO_INSTANT.format(e.timestamp)));
             }
             if (e.footer != null) body.append(",\"footer\":{\"text\":").append(json(e.footer)).append('}');
             body.append(",\"fields\":[");
@@ -56,8 +66,9 @@ public final class DiscordWebhook {
         connection.setReadTimeout(5000);
         connection.setRequestMethod("POST");
         connection.setDoOutput(true);
+        connection.setInstanceFollowRedirects(false);
         connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-        connection.setRequestProperty("User-Agent", "CMDLoggerIntegration/3.0");
+        connection.setRequestProperty("User-Agent", "CMDLoggerIntegration/3.1");
         byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
         connection.setFixedLengthStreamingMode(payload.length);
         try {
@@ -85,7 +96,7 @@ public final class DiscordWebhook {
             char c = value.charAt(i);
             switch (c) {
                 case '\"': out.append("\\\""); break;
-                case '\\': out.append("\\\\"); break;
+                case '\\\\': out.append("\\\\"); break;
                 case '\b': out.append("\\b"); break;
                 case '\f': out.append("\\f"); break;
                 case '\n': out.append("\\n"); break;
@@ -96,18 +107,34 @@ public final class DiscordWebhook {
                     else out.append(c);
             }
         }
-        return out.append('\"').toString();
+        return out.append('"').toString();
     }
 
     public static final class EmbedObject {
         private String title, footer;
         private Color color;
+        private Instant timestamp;
         private final List<Field> fields = new ArrayList<>();
-        public EmbedObject setTitle(String title) { this.title = title; return this; }
-        public EmbedObject setFooter(String text, String ignoredIcon) { this.footer = text; return this; }
+        public EmbedObject setTitle(String title) {
+            if (title != null && title.length() > 256) throw new IllegalArgumentException("Embed title exceeds 256 characters");
+            this.title = title;
+            return this;
+        }
+        public EmbedObject setTimestamp(Instant timestamp) { this.timestamp = timestamp; return this; }
+        public EmbedObject setFooter(String text, String ignoredIcon) {
+            if (text != null && text.length() > 2048) throw new IllegalArgumentException("Embed footer exceeds 2048 characters");
+            this.footer = text;
+            return this;
+        }
         public EmbedObject setColor(Color color) { this.color = color; return this; }
         public EmbedObject addField(String name, String value, boolean inline) {
-            if (name == null || value == null) throw new IllegalArgumentException("Embed field name and value are required");
+            if (name == null || value == null || name.isEmpty() || value.isEmpty()) {
+                throw new IllegalArgumentException("Embed field name and value are required");
+            }
+            if (name.length() > 256 || value.length() > 1024) {
+                throw new IllegalArgumentException("Embed field name/value exceeds Discord limits");
+            }
+            if (fields.size() >= 25) throw new IllegalArgumentException("Discord allows at most 25 fields per embed");
             fields.add(new Field(name, value, inline));
             return this;
         }
@@ -117,7 +144,9 @@ public final class DiscordWebhook {
         private final String name, value;
         private final boolean inline;
         private Field(String name, String value, boolean inline) {
-            this.name = name; this.value = value; this.inline = inline;
+            this.name = name;
+            this.value = value;
+            this.inline = inline;
         }
     }
 }
