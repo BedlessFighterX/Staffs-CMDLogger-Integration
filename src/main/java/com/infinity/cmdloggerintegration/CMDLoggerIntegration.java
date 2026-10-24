@@ -66,15 +66,8 @@ public final class CMDLoggerIntegration extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (deliveryExecutor != null) {
-            deliveryExecutor.shutdown();
-            try {
-                if (!deliveryExecutor.awaitTermination(2, TimeUnit.SECONDS)) deliveryExecutor.shutdownNow();
-            } catch (InterruptedException ex) {
-                deliveryExecutor.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
+        // Never block the server's shutdown thread while waiting for remote network calls.
+        if (deliveryExecutor != null) deliveryExecutor.shutdownNow();
     }
 
     boolean submitDelivery(Runnable task) {
