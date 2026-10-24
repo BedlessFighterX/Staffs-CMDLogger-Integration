@@ -7,33 +7,29 @@ import static org.junit.jupiter.api.Assertions.*;
 class WebhookUrlValidationTest {
     @Test
     void acceptsHttpsDiscordWebhookUrls() {
-        assertTrue(CMDLoggerIntegration.isValidWebhookUrl(
+        assertTrue(WebhookUrlValidator.isValid(
                 "https://discord.com/api/webhooks/123456789012345678/secret-token"));
-        assertTrue(CMDLoggerIntegration.isValidWebhookUrl(
+        assertTrue(WebhookUrlValidator.isValid(
                 "https://discordapp.com/api/webhooks/123456789012345678/secret-token/"));
+        assertTrue(WebhookUrlValidator.isValid(
+                "https://discord.com:443/api/webhooks/123456789012345678/secret-token"));
     }
 
     @Test
     void rejectsNonHttpsAndLookalikeHosts() {
-        assertFalse(CMDLoggerIntegration.isValidWebhookUrl(
-                "http://discord.com/api/webhooks/123/token"));
-        assertFalse(CMDLoggerIntegration.isValidWebhookUrl(
-                "https://discord.com.evil.example/api/webhooks/123/token"));
-        assertFalse(CMDLoggerIntegration.isValidWebhookUrl(
-                "https://notdiscord.com/api/webhooks/123/token"));
+        assertFalse(WebhookUrlValidator.isValid("http://discord.com/api/webhooks/123456789012345678/token"));
+        assertFalse(WebhookUrlValidator.isValid("https://discord.com.evil.example/api/webhooks/123456789012345678/token"));
+        assertFalse(WebhookUrlValidator.isValid("https://notdiscord.com/api/webhooks/123456789012345678/token"));
+        assertFalse(WebhookUrlValidator.isValid("https://discord.com:8443/api/webhooks/123456789012345678/token"));
     }
 
     @Test
     void rejectsMalformedOrAmbiguousWebhookUrls() {
-        assertFalse(CMDLoggerIntegration.isValidWebhookUrl(null));
-        assertFalse(CMDLoggerIntegration.isValidWebhookUrl("your-webhook-url"));
-        assertFalse(CMDLoggerIntegration.isValidWebhookUrl(
-                "https://discord.com/api/webhooks/not-a-number/token"));
-        assertFalse(CMDLoggerIntegration.isValidWebhookUrl(
-                "https://discord.com/api/webhooks/123/token/extra"));
-        assertFalse(CMDLoggerIntegration.isValidWebhookUrl(
-                "https://discord.com/api/webhooks/123/token?next=https://evil.example"));
-        assertFalse(CMDLoggerIntegration.isValidWebhookUrl(
-                "https://user@discord.com/api/webhooks/123/token"));
+        assertFalse(WebhookUrlValidator.isValid(null));
+        assertFalse(WebhookUrlValidator.isValid("your-webhook-url"));
+        assertFalse(WebhookUrlValidator.isValid("https://discord.com/api/webhooks/not-a-number/token"));
+        assertFalse(WebhookUrlValidator.isValid("https://discord.com/api/webhooks/123/token/extra"));
+        assertFalse(WebhookUrlValidator.isValid("https://discord.com/api/webhooks/123456789012345678/token?next=https://evil.example"));
+        assertFalse(WebhookUrlValidator.isValid("https://user@discord.com/api/webhooks/123456789012345678/token"));
     }
 }
