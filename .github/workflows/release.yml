@@ -2,12 +2,14 @@ name: Build and publish release
 
 on:
   push:
+    branches:
+      - master
     tags:
       - 'v*'
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing version tag to build and publish
+        description: Existing version tag to build and publish (leave blank is not supported)
         required: true
         type: string
 
@@ -15,7 +17,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  group: release-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || (github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name) }}
   cancel-in-progress: false
 
 jobs:
@@ -38,27 +40,48 @@ jobs:
           gradle-version: '8.14.3'
       - name: Build and test
         run: gradle clean test build --no-daemon
-      - name: Verify release tag matches project version
+      - name: Determine and validate release tag
+        id: release_meta
         shell: bash
         env:
-          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+          REF: ${{ github.ref }}
+          INPUT_TAG: ${{ inputs.tag }}
+          COMMIT_SHA: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
         run: |
-          VERSION="$(sed -n "s/^version = ['\"]\([^'\"]*\)['\"].*/\1/p" build.gradle | head -n 1)"
+          set -euo pipefail
+          VERSION="$(awk -F"'" '/^version = / { print $2; exit }' build.gradle)"
           if [[ -z "$VERSION" ]]; then
             echo "::error::Could not read project version from build.gradle"
             exit 1
           fi
-          if [[ "$RELEASE_TAG" != "v$VERSION" ]]; then
-            echo "::error::Release tag '$RELEASE_TAG' must match project version 'v$VERSION'"
+
+          if [[ "$EVENT_NAME" == "push" && "$REF" == "refs/heads/master" ]]; then
+            # Every master push gets a unique release tag, including merge commits.
+            RELEASE_TAG="v${VERSION}-build.${RUN_NUMBER}"
+          elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            RELEASE_TAG="$INPUT_TAG"
+          else
+            RELEASE_TAG="$REF_NAME"
+          fi
+
+          if [[ "$RELEASE_TAG" != "v$VERSION" && "$RELEASE_TAG" != "v$VERSION-build."* ]]; then
+            echo "::error::Release tag '$RELEASE_TAG' must be v$VERSION or v$VERSION-build.N"
             exit 1
           fi
+
+          echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Publishing $RELEASE_TAG from $COMMIT_SHA"
+
       - name: Publish GitHub Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
-          name: CMDLoggerIntegration ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+          tag_name: ${{ steps.release_meta.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: CMDLoggerIntegration ${{ steps.release_meta.outputs.tag }}
           generate_release_notes: true
           fail_on_unmatched_files: true
           files: build/libs/*.jar
