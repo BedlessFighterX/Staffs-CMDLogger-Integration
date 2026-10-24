@@ -19,7 +19,8 @@ public final class CMDLoggerIntegration extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        if (!WebhookUrlValidator.isValid(getConfig().getString("webhook-url", ""))) {
+        applyMissingDefaults();
+        if (!isWebhookConfigured()) {
             getLogger().severe("Invalid webhook-url. Set a valid Discord webhook URL in config.yml; plugin disabled.");
             getServer().getPluginManager().disablePlugin(this);
             return;
@@ -45,6 +46,17 @@ public final class CMDLoggerIntegration extends JavaPlugin {
         command.setTabCompleter(handler);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         getLogger().info("CMDLoggerIntegration v" + getDescription().getVersion() + " enabled.");
+    }
+
+    private void applyMissingDefaults() {
+        // Merge newly introduced settings into existing configs without overwriting server customizations.
+        getConfig().options().copyDefaults(true);
+        saveConfig();
+    }
+
+    void reloadSettings() {
+        reloadConfig();
+        applyMissingDefaults();
     }
 
     @Override
