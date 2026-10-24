@@ -25,9 +25,10 @@ public final class ChatListener implements Listener {
 
         String commandLine = event.getMessage();
         if (CommandFilter.shouldIgnore(commandLine, plugin.getConfig().getStringList("ignored-commands"))) return;
-        String safeCommand = plugin.getConfig().getBoolean("redact-all-arguments", false)
-                ? CommandFilter.redactAllArguments(commandLine)
-                : CommandFilter.redactArguments(commandLine, plugin.getConfig().getStringList("redacted-commands"));
+        String safeCommand = CommandFilter.sanitizeForDiscord(
+                plugin.getConfig().getBoolean("redact-all-arguments", true)
+                        ? CommandFilter.redactAllArguments(commandLine)
+                        : CommandFilter.redactArguments(commandLine, plugin.getConfig().getStringList("redacted-commands")));
 
         // Snapshot Bukkit state on the server thread; the bounded executor does network I/O.
         final String worldName = player.getWorld().getName();
