@@ -107,12 +107,26 @@ public final class DiscordWebhook {
         private Color color;
         private Instant timestamp;
         private final List<Field> fields = new ArrayList<>();
-        public EmbedObject setTitle(String title) { this.title = title; return this; }
-        public EmbedObject setFooter(String text, String ignoredIcon) { this.footer = text; return this; }
+        public EmbedObject setTitle(String title) {
+            if (title != null && title.length() > 256) throw new IllegalArgumentException("Embed title exceeds 256 characters");
+            this.title = title;
+            return this;
+        }
+        public EmbedObject setFooter(String text, String ignoredIcon) {
+            if (text != null && text.length() > 2048) throw new IllegalArgumentException("Embed footer exceeds 2048 characters");
+            this.footer = text;
+            return this;
+        }
         public EmbedObject setColor(Color color) { this.color = color; return this; }
         public EmbedObject setTimestamp(Instant timestamp) { this.timestamp = timestamp; return this; }
         public EmbedObject addField(String name, String value, boolean inline) {
-            if (name == null || value == null) throw new IllegalArgumentException("Embed field name and value are required");
+            if (name == null || value == null || name.isEmpty() || value.isEmpty()) {
+                throw new IllegalArgumentException("Embed field name and value are required");
+            }
+            if (name.length() > 256 || value.length() > 1024) {
+                throw new IllegalArgumentException("Embed field name/value exceeds Discord limits");
+            }
+            if (fields.size() >= 25) throw new IllegalArgumentException("Discord allows at most 25 fields per embed");
             fields.add(new Field(name, value, inline));
             return this;
         }
