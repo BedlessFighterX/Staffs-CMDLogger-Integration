@@ -34,6 +34,6 @@ final class CommandFilter {
         if (value.startsWith("/")) value = value.substring(1);
         int space = value.indexOf(' ');
         String root = space < 0 ? value : value.substring(0, space);
-        return "/" + root + (space < 0 ? "" : " §c[arguments redacted]");
+        return "/" + root + (space < 0 ? "" : " [arguments redacted]");
     }
 }
