@@ -25,7 +25,7 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(ChatColor.RED + "✖ You do not have permission to reload CMDLogger.");
                 return true;
             }
-            plugin.reloadConfig();
+            plugin.reloadSettings();
             if (!plugin.isWebhookConfigured()) {
                 sender.sendMessage(ChatColor.RED + "✖ Invalid webhook URL. Fix config.yml, then reload again.");
                 return true;
