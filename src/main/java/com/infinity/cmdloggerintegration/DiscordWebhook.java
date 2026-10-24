@@ -7,6 +7,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,11 +26,11 @@ public final class DiscordWebhook {
 
     public void execute() throws IOException {
         if (embeds.isEmpty()) throw new IllegalArgumentException("At least one embed is required");
+        if (embeds.size() > 10) throw new IllegalArgumentException("Discord allows at most 10 embeds per webhook");
         if (!WebhookUrlValidator.isValid(url)) throw new IllegalArgumentException("Webhook URL is not a valid Discord webhook URL");
 
         StringBuilder body = new StringBuilder("{\"username\":").append(json(username))
                 .append(",\"tts\":").append(tts)
-                // Prevent command text containing @everyone, @here, or role mentions from pinging users.
                 .append(",\"allowed_mentions\":{\"parse\":[]},\"embeds\":[");
         for (int i = 0; i < embeds.size(); i++) {
             if (i > 0) body.append(',');
@@ -38,7 +40,9 @@ public final class DiscordWebhook {
                 int rgb = (e.color.getRed() << 16) | (e.color.getGreen() << 8) | e.color.getBlue();
                 body.append(",\"color\":").append(rgb);
             }
+            if (e.timestamp != null) body.append(",\"timestamp\":").append(json(DateTimeFormatter.ISO_INSTANT.format(e.timestamp)));
             if (e.footer != null) body.append(",\"footer\":{\"text\":").append(json(e.footer)).append('}');
+            if (e.fields.size() > 25) throw new IllegalArgumentException("Discord allows at most 25 fields per embed");
             body.append(",\"fields\":[");
             for (int j = 0; j < e.fields.size(); j++) {
                 if (j > 0) body.append(',');
@@ -52,23 +56,22 @@ public final class DiscordWebhook {
         body.append("]}");
 
         HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
+        connection.setInstanceFollowRedirects(false);
+        connection.setUseCaches(false);
         connection.setConnectTimeout(5000);
         connection.setReadTimeout(5000);
         connection.setRequestMethod("POST");
         connection.setDoOutput(true);
         connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-        connection.setRequestProperty("User-Agent", "CMDLoggerIntegration/3.0");
+        connection.setRequestProperty("User-Agent", "CMDLoggerIntegration/3.1");
         byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
         connection.setFixedLengthStreamingMode(payload.length);
         try {
-            try (OutputStream output = connection.getOutputStream()) {
-                output.write(payload);
-            }
+            try (OutputStream output = connection.getOutputStream()) { output.write(payload); }
             int status = connection.getResponseCode();
             if (status < 200 || status >= 300) {
                 InputStream error = connection.getErrorStream();
                 if (error != null) error.close();
-                // Do not include the remote body; it may contain sensitive or unexpected content.
                 throw new IOException("Discord webhook returned HTTP " + status);
             }
             InputStream response = connection.getInputStream();
@@ -102,10 +105,12 @@ public final class DiscordWebhook {
     public static final class EmbedObject {
         private String title, footer;
         private Color color;
+        private Instant timestamp;
         private final List<Field> fields = new ArrayList<>();
         public EmbedObject setTitle(String title) { this.title = title; return this; }
         public EmbedObject setFooter(String text, String ignoredIcon) { this.footer = text; return this; }
         public EmbedObject setColor(Color color) { this.color = color; return this; }
+        public EmbedObject setTimestamp(Instant timestamp) { this.timestamp = timestamp; return this; }
         public EmbedObject addField(String name, String value, boolean inline) {
             if (name == null || value == null) throw new IllegalArgumentException("Embed field name and value are required");
             fields.add(new Field(name, value, inline));
@@ -116,8 +121,6 @@ public final class DiscordWebhook {
     private static final class Field {
         private final String name, value;
         private final boolean inline;
-        private Field(String name, String value, boolean inline) {
-            this.name = name; this.value = value; this.inline = inline;
-        }
+        private Field(String name, String value, boolean inline) { this.name = name; this.value = value; this.inline = inline; }
     }
 }
