@@ -5,7 +5,7 @@ A Spigot plugin that forwards commands executed by players with the cmdlogger.st
 ## Requirements
 - Minecraft server API compatible with Spigot 1.16.5 (compile API baseline).
 - Java 8-compatible runtime bytecode.
-- Gradle 8.x to build locally, or GitHub Actions CI.
+- Gradle 8.10.2 or GitHub Actions CI.
 - A privately configured Discord webhook URL.
 
 Compatibility with every Minecraft/server version is not guaranteed. Verify against the exact server version before production use.
@@ -14,7 +14,7 @@ Compatibility with every Minecraft/server version is not guaranteed. Verify agai
 
     gradle clean test build
 
-The JAR is written to build/libs/CMDLoggerIntegration-2.0.0.jar. Gradle is intended to be the supported build system after migration.
+The JAR is written to build/libs/CMDLoggerIntegration-2.0.0.jar. Gradle is the supported build system; Maven has been removed.
 
 ## Install and configure
 1. Build the JAR and place it in the server plugins/ directory.
