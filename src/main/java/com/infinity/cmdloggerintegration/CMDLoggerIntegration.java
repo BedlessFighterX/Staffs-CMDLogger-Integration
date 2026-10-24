@@ -21,8 +21,11 @@ public final class CMDLoggerIntegration extends JavaPlugin {
  static boolean isValidWebhookUrl(String value) {
   if (value == null || value.trim().isEmpty() || "your-webhook-url".equalsIgnoreCase(value.trim())) return false;
   try {
-   URI uri = URI.create(value.trim()); String host = uri.getHost();
+   URI uri = URI.create(value.trim());
+   String host = uri.getHost();
    if (!"https".equalsIgnoreCase(uri.getScheme()) || host == null) return false;
+   if (uri.getRawUserInfo() != null || uri.getRawQuery() != null || uri.getRawFragment() != null) return false;
+   if (uri.getPort() != -1 && uri.getPort() != 443) return false;
    boolean discordHost = "discord.com".equalsIgnoreCase(host) || "discordapp.com".equalsIgnoreCase(host);
    return discordHost && uri.getPath() != null && uri.getPath().matches("/api/webhooks/[0-9]+/[^/]+/?");
   } catch (IllegalArgumentException ex) { return false; }
