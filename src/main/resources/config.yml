@@ -2,8 +2,9 @@
 # Prefer setting this privately and never commit a live webhook URL.
 webhook-url: 'your-webhook-url'
 
-# When enabled, every command is logged without its arguments.
-redact-all-arguments: false
+# Privacy-first default: only command roots are sent; all arguments stay on the server.
+# Set to false only if your audit policy explicitly requires arguments, and configure redacted-commands.
+redact-all-arguments: true
 
 # Player names listed here are excluded from command logging (case-insensitive).
 ignored-players: []
@@ -21,7 +22,7 @@ embed:
 ignored-commands:
   - 'examplecommand1'
 
-# These commands are logged with their root only; add plugin-specific secret-bearing commands.
+# When redact-all-arguments is disabled, these commands still have every argument redacted.
 redacted-commands:
   - 'login'
   - 'register'
