@@ -6,6 +6,10 @@ webhook-url: 'your-webhook-url'
 # Set to false only if your audit policy explicitly requires arguments, and configure redacted-commands.
 redact-all-arguments: true
 
+# Console commands are not logged unless explicitly enabled.
+# Global argument redaction still applies to console commands.
+log-console-commands: false
+
 # Player names listed here are excluded from command logging (case-insensitive).
 ignored-players: []
 
