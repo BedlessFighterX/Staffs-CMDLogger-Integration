@@ -1,37 +1,49 @@
 # CMDLoggerIntegration
 
-A Spigot plugin that forwards commands executed by players with the cmdlogger.staff permission to a configured Discord webhook.
+A Paper plugin that forwards commands executed by players with the `cmdlogger.staff` permission to a configured Discord webhook, with configurable exclusions and argument redaction.
 
 ## Requirements
-- Minecraft server API compatible with Spigot 1.16.5 (compile API baseline).
-- Java 8-compatible runtime bytecode.
-- Gradle 8.10.2 or GitHub Actions CI.
+
+- Paper 1.21.4 (or a compatible server API) and Java 21.
+- Gradle 8.14.3 or GitHub Actions CI.
 - A privately configured Discord webhook URL.
 
-Compatibility with every Minecraft/server version is not guaranteed. Verify against the exact server version before production use.
+This is a major-version compatibility change from the old Spigot 1.16 / Java 8 baseline. Back up your server and verify on a staging server before upgrading.
 
 ## Build
 
-    gradle clean test build
+```sh
+gradle clean test build
+```
 
-The JAR is written to build/libs/CMDLoggerIntegration-2.0.0.jar. Gradle is the supported build system; Maven has been removed.
+The JAR is written to `build/libs/CMDLoggerIntegration-3.0.0.jar`. Gradle is the supported build system; Maven has been removed.
 
 ## Install and configure
-1. Build the JAR and place it in the server plugins/ directory.
-2. Start the server once to generate plugins/CMDLoggerIntegration/config.yml, then stop it.
-3. Set webhook-url to a Discord webhook URL. Never commit or share this URL.
-4. Configure ignored-commands for command roots that may contain secrets. Matching is case-insensitive and ignores command arguments.
-5. Restart the server. Grant cmdlogger.staff only to roles whose commands should be logged.
+
+1. Back up the server and existing plugin config.
+2. Place the JAR in `plugins/` and start the server once to generate config.
+3. Set `webhook-url` in `plugins/CMDLoggerIntegration/config.yml`. Treat it as a password; never commit or share it.
+4. Review `ignored-commands` (fully suppress a command) and `redacted-commands` (record the root but redact all arguments).
+5. Restart the server and grant `cmdlogger.staff` only to staff whose commands should be audited.
 
 ## Commands and permissions
-- /cmdlogger — display plugin information.
-- /cmdlogger reload — reload config; requires cmdlogger.admin.
-- cmdlogger.staff — commands executed by this player are logged; defaults to operators.
 
-## Privacy and operations
-Command logs can contain passwords, tokens, personal data, or private arguments. Use an access-controlled Discord channel, exclude sensitive command roots, and restrict access to server config. The ignore list is not a substitute for avoiding secrets in commands.
+- `/cmdlogger help` — styled help.
+- `/cmdlogger reload` — reload config; requires `cmdlogger.admin`.
+- `/cmdlogger status` — show configuration status without revealing the webhook; requires `cmdlogger.admin`.
+- `cmdlogger.staff` — commands from this player are logged; defaults to operators.
+- `cmdlogger.use` — use the command; defaults to everyone.
 
-Webhook requests run asynchronously and have bounded timeouts. Delivery failures are written to the server log; no persistent queue/retry policy exists yet. Review the repository audit and security notes before production use.
+Tab completion only suggests administrative subcommands to senders with the admin permission.
 
-## Contributing
-Run gradle clean test build before submitting changes. Do not commit live webhook URLs or server secrets.
+## Security and privacy
+
+Command logs can contain passwords, tokens, personal data, or private arguments. The default redaction list covers common authentication roots, but **you must add the commands used by your installed plugins**. Unknown commands and aliases may still expose arguments. Use an access-controlled Discord channel, restrict filesystem access, and rotate the webhook immediately if it leaks.
+
+Webhook URLs are restricted to HTTPS Discord webhook endpoints; webhook credentials are never printed in the plugin's error messages. Discord mentions are disabled in outgoing payloads to prevent commands containing `@everyone` or role mentions from triggering notifications. Requests run off the main server thread with bounded connection/read timeouts. Delivery is not durable: network failures can still cause lost audit events, and this plugin does not yet implement a persistent retry queue.
+
+## Validation
+
+Run `gradle clean test build` before submitting changes. CI compiles against Java 21 and Paper 1.21.4, runs unit tests, and stores the built JAR as an Actions artifact. Versioned GitHub Releases are created by the release workflow when a matching `vX.Y.Z` tag is pushed.
+
+A code review cannot prove the absence of every vulnerability. Test against your exact server version and review any server-specific commands that handle secrets.
