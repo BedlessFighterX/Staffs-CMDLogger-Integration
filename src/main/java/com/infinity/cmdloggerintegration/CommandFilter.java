@@ -45,6 +45,28 @@ final class CommandFilter {
         return "/" + root + (space < 0 ? "" : " [arguments redacted]");
     }
 
+    /**
+     * Makes untrusted command text safe to display inside a Discord embed.
+     * Mentions are disabled at payload level too; escaping prevents visual spoofing
+     * with Markdown and collapses control characters into a single line.
+     */
+    static String sanitizeForDiscord(String value) {
+        if (value == null) return "(unknown)";
+        StringBuilder safe = new StringBuilder(Math.min(value.length() + 16, 2048));
+        for (int i = 0; i < value.length(); i++) {
+            char c = value.charAt(i);
+            if (Character.isISOControl(c)) {
+                if (Character.isWhitespace(c) && (safe.length() == 0 || safe.charAt(safe.length() - 1) != ' ')) {
+                    safe.append(' ');
+                }
+                continue;
+            }
+            if ("\\*_~`|>#[]()@".indexOf(c) >= 0) safe.append('\\');
+            safe.append(c);
+        }
+        return safe.toString().trim();
+    }
+
     private static int firstWhitespace(String value) {
         for (int i = 0; i < value.length(); i++) if (Character.isWhitespace(value.charAt(i))) return i;
         return -1;
