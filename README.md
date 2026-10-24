@@ -35,7 +35,7 @@ Existing configurations are retained and new default keys are merged on startup.
 - /cmdlogger diagnostics — alias for detailed status and queue diagnostics; requires cmdlogger.admin.
 - cmdlogger.staff — commands from this player are logged; defaults to operators.
 - cmdlogger.use — use the plugin command; defaults to everyone.
-- cmdlogger.admin — reload configuration and inspect diagnostics; defaults to operators.
+- cmdlogger.admin — reload configuration, test webhook delivery, and inspect diagnostics; defaults to operators.
 
 Tab completion only suggests administrative subcommands to senders with the admin permission.
 
