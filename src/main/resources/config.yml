@@ -6,13 +6,16 @@ embed:
   title: 'Staff Command Audit'
   color: '#5865F2'
   show-operator-status: true
+  show-world: true
+  # UUIDs can help correlate accounts but are personal identifiers; enable only if needed.
+  show-player-uuid: false
 
 # Root commands to exclude entirely. Matching ignores case, leading slash, namespace, and arguments.
 ignored-commands:
   - 'examplecommand1'
 
 # These commands are logged with their root only; all arguments are replaced with a redaction marker.
-# Add plugin-specific login, password, token, auth, and account-management commands used on your server.
+# Add plugin-specific login, password, token, auth, and account-management commands used by your server.
 redacted-commands:
   - 'login'
   - 'register'
