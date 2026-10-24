@@ -13,10 +13,7 @@ import java.util.Locale;
 
 public final class MainCommand implements CommandExecutor, TabCompleter {
     private final CMDLoggerIntegration plugin;
-
-    public MainCommand(CMDLoggerIntegration plugin) {
-        this.plugin = plugin;
-    }
+    public MainCommand(CMDLoggerIntegration plugin) { this.plugin = plugin; }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
@@ -25,30 +22,37 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(ChatColor.RED + "✖ You do not have permission to reload CMDLogger.");
                 return true;
             }
-            plugin.reloadSettings();
-            if (!plugin.isWebhookConfigured()) {
-                sender.sendMessage(ChatColor.RED + "✖ Invalid webhook URL. Fix config.yml, then reload again.");
+            if (!plugin.reloadSettings()) {
+                sender.sendMessage(ChatColor.RED + "✖ Reload cancelled: webhook-url is invalid. Your active settings were preserved.");
+                sender.sendMessage(ChatColor.GRAY + "  Correct config.yml and run /" + label + " reload again.");
                 return true;
             }
             sender.sendMessage(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             sender.sendMessage(ChatColor.GREEN + "✔ " + ChatColor.WHITE + "CMDLogger configuration reloaded.");
             sender.sendMessage(ChatColor.GRAY + "  Excluded commands: " + plugin.getConfig().getStringList("ignored-commands").size());
             sender.sendMessage(ChatColor.GRAY + "  Redacted command roots: " + plugin.getConfig().getStringList("redacted-commands").size());
+            sender.sendMessage(ChatColor.GRAY + "  Global argument redaction: " +
+                    (plugin.getConfig().getBoolean("redact-all-arguments", false) ? ChatColor.GREEN + "enabled" : ChatColor.YELLOW + "disabled"));
             sender.sendMessage(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             return true;
         }
 
-        if (args.length == 1 && "status".equalsIgnoreCase(args[0])) {
+        if (args.length == 1 && ("status".equalsIgnoreCase(args[0]) || "diagnostics".equalsIgnoreCase(args[0]))) {
             if (!sender.hasPermission("cmdlogger.admin")) {
-                sender.sendMessage(ChatColor.RED + "✖ You do not have permission to view plugin status.");
+                sender.sendMessage(ChatColor.RED + "✖ You do not have permission to view plugin diagnostics.");
                 return true;
             }
-            sender.sendMessage(ChatColor.DARK_GRAY + "━━━━ " + ChatColor.AQUA + " CMDLogger Status " + ChatColor.DARK_GRAY + "━━━━");
+            sender.sendMessage(ChatColor.DARK_GRAY + "━━━━ " + ChatColor.AQUA + " CMDLogger Diagnostics " + ChatColor.DARK_GRAY + "━━━━");
             sender.sendMessage(ChatColor.GRAY + "Version: " + ChatColor.WHITE + plugin.getDescription().getVersion());
             sender.sendMessage(ChatColor.GRAY + "Webhook: " + (plugin.isWebhookConfigured() ? ChatColor.GREEN + "configured" : ChatColor.RED + "invalid"));
             sender.sendMessage(ChatColor.GRAY + "Staff command logging: " + ChatColor.GREEN + "enabled");
             sender.sendMessage(ChatColor.GRAY + "Excluded roots: " + ChatColor.WHITE + plugin.getConfig().getStringList("ignored-commands").size());
             sender.sendMessage(ChatColor.GRAY + "Redacted roots: " + ChatColor.WHITE + plugin.getConfig().getStringList("redacted-commands").size());
+            sender.sendMessage(ChatColor.GRAY + "Ignored players: " + ChatColor.WHITE + plugin.getConfig().getStringList("ignored-players").size());
+            sender.sendMessage(ChatColor.GRAY + "Global argument redaction: " +
+                    (plugin.getConfig().getBoolean("redact-all-arguments", false) ? ChatColor.GREEN + "enabled" : ChatColor.YELLOW + "disabled"));
+            sender.sendMessage(ChatColor.GRAY + "Delivery queue: " + ChatColor.WHITE + plugin.getQueueDepth() + "/" + plugin.getQueueCapacity());
+            sender.sendMessage(ChatColor.GRAY + "Completed delivery tasks: " + ChatColor.WHITE + plugin.getCompletedDeliveryTasks());
             return true;
         }
 
@@ -58,8 +62,9 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.GRAY + "  Secure staff command auditing");
             sender.sendMessage(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             sender.sendMessage(ChatColor.YELLOW + "/" + label + " help " + ChatColor.GRAY + "— show this help");
-            sender.sendMessage(ChatColor.YELLOW + "/" + label + " reload " + ChatColor.GRAY + "— reload configuration");
-            sender.sendMessage(ChatColor.YELLOW + "/" + label + " status " + ChatColor.GRAY + "— show audit status (admin)");
+            sender.sendMessage(ChatColor.YELLOW + "/" + label + " reload " + ChatColor.GRAY + "— validate and reload configuration (admin)");
+            sender.sendMessage(ChatColor.YELLOW + "/" + label + " status " + ChatColor.GRAY + "— show audit and queue health (admin)");
+            sender.sendMessage(ChatColor.YELLOW + "/" + label + " diagnostics " + ChatColor.GRAY + "— detailed delivery diagnostics (admin)");
             sender.sendMessage(ChatColor.DARK_GRAY + "Project: " + ChatColor.BLUE + "github.com/BedlessFighterX/Staffs-CMDLogger-Integration");
             return true;
         }
@@ -77,6 +82,7 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
         if (sender.hasPermission("cmdlogger.admin")) {
             options.add("reload");
             options.add("status");
+            options.add("diagnostics");
         }
         options.removeIf(option -> !option.startsWith(prefix));
         return options;
