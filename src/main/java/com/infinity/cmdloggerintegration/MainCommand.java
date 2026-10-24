@@ -6,6 +6,8 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 
+import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -56,6 +58,42 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (args.length == 1 && "test".equalsIgnoreCase(args[0])) {
+            if (!sender.hasPermission("cmdlogger.admin")) {
+                sender.sendMessage(ChatColor.RED + "✖ You do not have permission to test the webhook.");
+                return true;
+            }
+            if (!plugin.isWebhookConfigured()) {
+                sender.sendMessage(ChatColor.RED + "✖ Webhook URL is not configured. Check config.yml.");
+                return true;
+            }
+            final String webhookUrl = plugin.getConfig().getString("webhook-url", "");
+            final String title = plugin.getEmbedTitle();
+            final java.awt.Color color = plugin.getEmbedColor();
+            final String requesterName = sender.getName();
+            boolean accepted = plugin.submitDelivery(() -> {
+                try {
+                    DiscordWebhook webhook = new DiscordWebhook(webhookUrl);
+                    webhook.setUsername("Staff Command Logger");
+                    webhook.addEmbed(new DiscordWebhook.EmbedObject()
+                            .setTitle(title)
+                            .setTimestamp(Instant.now())
+                            .setColor(color)
+                            .addField("✅ Connection test", "The webhook is configured and CMDLogger can deliver audit events.", false)
+                            .addField("🧑‍💻 Requested by", requesterName, true)
+                            .setFooter("CMDLoggerIntegration • Configuration test", null));
+                    webhook.execute();
+                    plugin.getLogger().info("Discord webhook connection test completed successfully.");
+                } catch (IOException | IllegalArgumentException ex) {
+                    plugin.getLogger().warning("Discord webhook test failed (" + ex.getClass().getSimpleName() + ").");
+                }
+            });
+            sender.sendMessage(accepted
+                    ? ChatColor.GREEN + "✔ Webhook test queued. Check Discord for the test embed."
+                    : ChatColor.RED + "✖ Webhook queue is busy; try again in a moment.");
+            return true;
+        }
+
         if (args.length == 0 || (args.length == 1 && "help".equalsIgnoreCase(args[0]))) {
             sender.sendMessage(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             sender.sendMessage(ChatColor.AQUA.toString() + ChatColor.BOLD + "  CMDLogger " + ChatColor.GRAY + "v" + plugin.getDescription().getVersion());
@@ -65,6 +103,7 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.YELLOW + "/" + label + " reload " + ChatColor.GRAY + "— validate and reload configuration (admin)");
             sender.sendMessage(ChatColor.YELLOW + "/" + label + " status " + ChatColor.GRAY + "— show audit and queue health (admin)");
             sender.sendMessage(ChatColor.YELLOW + "/" + label + " diagnostics " + ChatColor.GRAY + "— detailed delivery diagnostics (admin)");
+            sender.sendMessage(ChatColor.YELLOW + "/" + label + " test " + ChatColor.GRAY + "— send a test embed (admin)");
             sender.sendMessage(ChatColor.DARK_GRAY + "Project: " + ChatColor.BLUE + "github.com/BedlessFighterX/Staffs-CMDLogger-Integration");
             return true;
         }
@@ -83,6 +122,7 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
             options.add("reload");
             options.add("status");
             options.add("diagnostics");
+            options.add("test");
         }
         options.removeIf(option -> !option.startsWith(prefix));
         return options;
