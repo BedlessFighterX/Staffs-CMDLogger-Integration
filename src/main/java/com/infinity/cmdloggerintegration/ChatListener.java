@@ -1,103 +1,45 @@
 package com.infinity.cmdloggerintegration;
 
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-
-import java.awt.*;
 import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
-public class ChatListener implements Listener {
-
-    // Registering plugin
-
-    private final CMDLoggerIntegration plugin;
-
-    public ChatListener(CMDLoggerIntegration plugin) {
-        this.plugin = plugin;
-    }
-
-    // Main event
-
-    @EventHandler
-    public void onCommandSend(PlayerCommandPreprocessEvent event) throws IOException {
-        if (event.getPlayer().hasPermission("cmdlogger.staff")) {
-            // Getting configurations
-            String webhookURL = this.plugin.getConfig().getString("webhook-url");
-            String command = event.getMessage();
-            String isPlayerOp = String.valueOf(event.getPlayer().isOp());
-            String playerWorld = event.getPlayer().getWorld().getName();
-            String embedTitle = this.plugin.getConfig().getString("embed.title");
-            Color embedHexColor = Color.decode(Objects.requireNonNull(this.plugin.getConfig().getString("embed.color")));
-            List<?> ignoredCommands = this.plugin.getConfig().getStringList("ignored-commands");
-            DiscordWebhook webhook = new DiscordWebhook(webhookURL);
-
-            // Checking configuration
-            if (isPlayerOp == "true") {
-                isPlayerOp = "Yes";
-            } else {
-                isPlayerOp = "No";
-            }
-            if (embedTitle == null) {
-                embedTitle = "Staffs Command Logger";
-                webhook.setUsername("Staff Command Logger");
-                webhook.setTts(false);
-                webhook.addEmbed(new DiscordWebhook.EmbedObject()
-
-                        .setTitle(embedTitle)
-                        .addField("Executed Command", command, true)
-                        .addField("Player Username", event.getPlayer().getDisplayName(), false)
-                        .addField("World", playerWorld, false)
-                        .addField("Is player a operator?", isPlayerOp, false)
-                        .setFooter("Powered by CMDLoggerIntegration", "http://185.3.200.22/assets/cmdlogger-avatar.png")
-                        .setThumbnail("http://185.3.200.22/assets/cmdlogger-avatar.png")
-                        .setColor(embedHexColor)
-                );
-
-                webhook.setAvatarUrl("http://185.3.200.22/assets/cmdlogger-avatar.png");
-                webhook.execute();
-            } else if (embedHexColor == null) {
-                embedHexColor = Color.decode("#020101");
-                webhook.setUsername("Staff Command Logger");
-                webhook.setTts(false);
-                webhook.addEmbed(new DiscordWebhook.EmbedObject()
-
-                        .setTitle(embedTitle)
-                        .addField("Executed Command", command, true)
-                        .addField("Player Username", event.getPlayer().getDisplayName(), false)
-                        .addField("World", playerWorld, false)
-                        .addField("Is player a operator?", isPlayerOp, false)
-                        .setFooter("Powered by CMDLoggerIntegration", "http://185.3.200.22/assets/cmdlogger-avatar.png")
-                        .setThumbnail("http://185.3.200.22/assets/cmdlogger-avatar.png")
-                        .setColor(embedHexColor)
-                );
-
-                webhook.setAvatarUrl("http://185.3.200.22/assets/cmdlogger-avatar.png");
-                webhook.execute();
-            } else {
-                webhook.setUsername("Staff Command Logger");
-                webhook.setTts(false);
-                webhook.addEmbed(new DiscordWebhook.EmbedObject()
-
-                        .setTitle(embedTitle)
-                        .addField("Executed Command", command, true)
-                        .addField("Player Username", event.getPlayer().getDisplayName(), false)
-                        .addField("World", playerWorld, false)
-                        .addField("Is player a operator?", isPlayerOp, false)
-                        .setFooter("Powered by CMDLoggerIntegration", "http://185.3.200.22/assets/cmdlogger-avatar.png")
-                        .setThumbnail("http://185.3.200.22/assets/cmdlogger-avatar.png")
-                        .setColor(embedHexColor)
-                );
-
-                webhook.setAvatarUrl("http://185.3.200.22/assets/cmdlogger-avatar.png");
-                webhook.execute();
-
-            }
-        }
-
-    }
-
+public final class ChatListener implements Listener {
+ private final CMDLoggerIntegration plugin;
+ public ChatListener(CMDLoggerIntegration plugin) { this.plugin = plugin; }
+ @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+ public void onCommandSend(PlayerCommandPreprocessEvent event) {
+  Player player = event.getPlayer();
+  if (!player.hasPermission("cmdlogger.staff")) return;
+  String commandLine = event.getMessage();
+  List<String> ignored = plugin.getConfig().getStringList("ignored-commands");
+  if (CommandFilter.shouldIgnore(commandLine, ignored)) return;
+  // Snapshot Bukkit state on the main thread; do not access Player from the worker.
+  final String playerName = player.getName();
+  final String worldName = player.getWorld().getName();
+  final boolean operator = player.isOp();
+  final String title = plugin.getEmbedTitle();
+  final java.awt.Color color = plugin.getEmbedColor();
+  final String webhookUrl = plugin.getConfig().getString("webhook-url", "");
+  plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+   try {
+    DiscordWebhook webhook = new DiscordWebhook(webhookUrl);
+    webhook.setUsername("Staff Command Logger");
+    webhook.addEmbed(new DiscordWebhook.EmbedObject().setTitle(title)
+      .addField("Executed Command", truncate(commandLine, 1024), false)
+      .addField("Player Username", truncate(playerName, 256), true)
+      .addField("World", truncate(worldName, 256), true)
+      .addField("Is player an operator?", operator ? "Yes" : "No", true)
+      .setFooter("Powered by CMDLoggerIntegration", null).setColor(color));
+    webhook.execute();
+   } catch (IOException | IllegalArgumentException ex) {
+    plugin.getLogger().warning("Could not deliver a command-log event to Discord: " + ex.getMessage());
+   }
+  });
+ }
+ private static String truncate(String value, int limit) { if (value == null) return "(unknown)"; return value.length() <= limit ? value : value.substring(0, limit - 1) + "…"; }
 }

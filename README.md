@@ -1,23 +1,37 @@
-# 🏅 CMD Logger Integration 🏅
-## _✨A Superior Plugin To Log Your Staffs✨_
+# CMDLoggerIntegration
 
+A Spigot plugin that forwards commands executed by players with the cmdlogger.staff permission to a configured Discord webhook.
 
+## Requirements
+- Minecraft server API compatible with Spigot 1.16.5 (compile API baseline).
+- Java 8-compatible runtime bytecode.
+- Gradle 8.10.2 or GitHub Actions CI.
+- A privately configured Discord webhook URL.
 
-CMDLoggerIntegration is a powerful plugin that tracks every single commands that is executed by players and sends them to you for your security optimizing.
+Compatibility with every Minecraft/server version is not guaranteed. Verify against the exact server version before production use.
 
-- Optimized and Tested
-- Support is Included
+## Build
 
+    gradle clean test build
 
-## Features
+The JAR is written to build/libs/CMDLoggerIntegration-2.0.0.jar. Gradle is the supported build system; Maven has been removed.
 
-- Uses Java 16 and uses the newest events that are added.
-- Works fine with any versions.
-- You can edit the embed's style a little bit.
-- All errors are prevented as much as possible.
-- Uses DiscordIntegration and DiscordWebhook to send messages.
+## Install and configure
+1. Build the JAR and place it in the server plugins/ directory.
+2. Start the server once to generate plugins/CMDLoggerIntegration/config.yml, then stop it.
+3. Set webhook-url to a Discord webhook URL. Never commit or share this URL.
+4. Configure ignored-commands for command roots that may contain secrets. Matching is case-insensitive and ignores command arguments.
+5. Restart the server. Grant cmdlogger.staff only to roles whose commands should be logged.
 
-This plugin tries to catch your server griefers and it makes your life a better one because if you're out and you can't deal with dupelicators, griefers, abusers, etc, while you're enjoying your vacation, this plugin tells you whether someone is trying to grief or not ⚡
+## Commands and permissions
+- /cmdlogger — display plugin information.
+- /cmdlogger reload — reload config; requires cmdlogger.admin.
+- cmdlogger.staff — commands executed by this player are logged; defaults to operators.
 
-> [!IMPORTANT]
-> Be aware that if you want to apply changes and make this plugin better, you must give credits.
+## Privacy and operations
+Command logs can contain passwords, tokens, personal data, or private arguments. Use an access-controlled Discord channel, exclude sensitive command roots, and restrict access to server config. The ignore list is not a substitute for avoiding secrets in commands.
+
+Webhook requests run asynchronously and have bounded timeouts. Delivery failures are written to the server log; no persistent queue/retry policy exists yet. Review the repository audit and security notes before production use.
+
+## Contributing
+Run gradle clean test build before submitting changes. Do not commit live webhook URLs or server secrets.
