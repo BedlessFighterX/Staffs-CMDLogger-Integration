@@ -34,7 +34,7 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.GRAY + "  Excluded commands: " + plugin.getConfig().getStringList("ignored-commands").size());
             sender.sendMessage(ChatColor.GRAY + "  Redacted command roots: " + plugin.getConfig().getStringList("redacted-commands").size());
             sender.sendMessage(ChatColor.GRAY + "  Global argument redaction: " +
-                    (plugin.getConfig().getBoolean("redact-all-arguments", false) ? ChatColor.GREEN + "enabled" : ChatColor.YELLOW + "disabled"));
+                    (plugin.getConfig().getBoolean("redact-all-arguments", true) ? ChatColor.GREEN + "enabled" : ChatColor.YELLOW + "disabled"));
             sender.sendMessage(ChatColor.DARK_GRAY + "━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
             return true;
         }
@@ -51,6 +51,7 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.GRAY + "Excluded roots: " + ChatColor.WHITE + plugin.getConfig().getStringList("ignored-commands").size());
             sender.sendMessage(ChatColor.GRAY + "Redacted roots: " + ChatColor.WHITE + plugin.getConfig().getStringList("redacted-commands").size());
             sender.sendMessage(ChatColor.GRAY + "Ignored players: " + ChatColor.WHITE + plugin.getConfig().getStringList("ignored-players").size());
+            sender.sendMessage(ChatColor.GRAY + "Console auditing: " + (plugin.getConfig().getBoolean("log-console-commands", false) ? ChatColor.GREEN + "enabled" : ChatColor.YELLOW + "disabled"));
             sender.sendMessage(ChatColor.GRAY + "Global argument redaction: " +
                     (plugin.getConfig().getBoolean("redact-all-arguments", false) ? ChatColor.GREEN + "enabled" : ChatColor.YELLOW + "disabled"));
             sender.sendMessage(ChatColor.GRAY + "Delivery queue: " + ChatColor.WHITE + plugin.getQueueDepth() + "/" + plugin.getQueueCapacity());
