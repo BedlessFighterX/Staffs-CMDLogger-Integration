@@ -14,7 +14,7 @@ This is a major compatibility change from the old Spigot 1.16 / Java 8 baseline.
 
     gradle clean test build
 
-The JAR is written to build/libs/CMDLoggerIntegration-3.1.0.jar. Gradle is the supported build system; Maven has been removed.
+The JAR is written to build/libs/CMDLoggerIntegration-3.2.0.jar. Gradle is the supported build system; Maven has been removed.
 
 ## Install and configure
 
