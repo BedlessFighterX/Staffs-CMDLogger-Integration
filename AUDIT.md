@@ -1,33 +1,32 @@
-# Repository audit and remediation record
+# Security audit and remediation record
 
-## Scope
-Reviewed the original master source tree: Maven build, plugin entry point, command listener, webhook implementation, command executor, plugin metadata, configuration, and README. This is a source review, not a penetration test of a live server.
+## Scope and confidence
+This is a source-level review and regression-test record, not a penetration test or a guarantee that the project has no vulnerabilities. The current proposed release changes the baseline to Java 21 and Paper 1.21.4. Live server behavior, permission integration, and real webhook delivery still require staging validation.
 
-## Findings
+## Remediated findings
 
-| Severity | Finding | Evidence / impact | Remediation |
-|---|---|---|---|
-| High | Network request on server event thread | Original ChatListener called webhook.execute() inside the command event; network delays could stall a tick. | Snapshot player state on the server thread and send asynchronously with timeouts. |
-| High | JSON strings not escaped | Original JSONObject.quote only wrapped values in quotes. Quotes/backslashes in commands could produce malformed JSON. | Proper JSON string escaping and UTF-8 payload. |
-| Medium | Ignore list unused | Original listener read ignored-commands but never checked it. | Root-command matching and unit tests. |
-| Medium | Unsafe configuration assumptions | Original code used requireNonNull and did not safely handle malformed colors/titles. | Validate webhook at startup and provide title/color fallbacks. |
-| Medium | HTTP errors/timeouts poorly handled | Original webhook had no connect/read timeout and did not process error responses. | Bounded timeouts, status checks, bounded error body. |
-| Medium | Hard-coded remote HTTP assets | Original listener sent an IP-based HTTP image URL. | Remove third-party HTTP assets. |
-| Medium | Build metadata contradictory | Maven targeted Java 8, README claimed Java 16; no tests/CI. | Gradle build, Java 8 bytecode, JDK 17 CI intended. |
-| Low | No protected reload command | Existing command only advertised project links. | Add /cmdlogger reload guarded by cmdlogger.admin. |
-| Low | Missing command null check | Original code dereferenced getCommand without checking. | Explicit startup validation. |
+| Severity | Finding | Remediation |
+|---|---|---|
+| High | Network calls could block the server thread | Network work runs on a dedicated executor with two workers, a bounded queue of 256 tasks, timeouts, and a safe rejection warning. |
+| High | Sensitive command arguments could be forwarded | Added configurable `redacted-commands`; matching commands record only the root and a redaction marker. `ignored-commands` still suppresses entries entirely. |
+| Medium | Webhook URL could accept ambiguous or hostile URL forms | Standalone validator requires HTTPS, exact Discord host, expected webhook path, numeric ID, and rejects user-info, query, fragment, and non-standard ports. |
+| Medium | Discord mentions could be triggered by command text | Outgoing payload sets `allowed_mentions.parse=[]`. |
+| Medium | Remote error body could appear in server logs | Only HTTP status or exception class is logged; the webhook URL and remote response body are not included. |
+| Medium | Unbounded asynchronous work could accumulate during command bursts | Fixed two-thread executor and bounded 256-entry queue; overload drops events rather than growing without limit. |
+| Medium | Test compilation depended on loading Bukkit's JavaPlugin type | URL validation extracted into a pure-Java class so validation tests do not reference the plugin entry point. |
+| Low | Limited command management UX | Added styled help, protected status/reload commands, and permission-aware tab completion. |
 
-## Safe proof-of-concept examples
-These examples are local demonstrations and do not contact a real webhook.
+## Safe proof-of-concept regression cases
+These tests are local and do not contact a live webhook.
 
-1. JSON encoding: command text /say \"hello\" made the original quote-only encoder emit an unescaped quote, invalidating JSON. The replacement encoder escapes quotes, backslashes, and control characters.
-2. Ignored command bypass: with ignored-commands containing plugins, executing /plugins still sent a log in the original because the list was never consulted. CommandFilterTest verifies the fix.
-3. Server-thread blocking: an unreachable or slow endpoint made the original synchronous webhook call delay command processing. The replacement schedules network work asynchronously and sets 5-second connect/read timeouts.
+1. **Webhook URL validation:** HTTP, lookalike hosts, non-standard ports, query strings, user-info, malformed IDs, and extra path segments are rejected by `WebhookUrlValidationTest`.
+2. **Argument redaction:** `/login MyPassword123` is transformed to `/login [arguments redacted]` when `login` is configured, as covered by `CommandFilterTest`.
+3. **Command exclusion:** a configured root such as `plugins` is excluded case-insensitively and for namespaced command forms.
+4. **Mention abuse:** the Discord payload explicitly disables parsed mentions so command text cannot trigger @everyone/@here/role pings.
 
-## Migration and validation
-- Gradle migration is started on the hardening branch; Java bytecode compatibility remains Java 8.
-- Unit tests cover command filtering.
-- A live server smoke test and test webhook are still required.
-
-## Residual risks
-Command logging can expose credentials in command arguments. Configure exclusions and restrict Discord channel access. There is no durable retry queue or rate-limit backoff. The API baseline remains Spigot 1.16.5; other versions must be tested, not assumed compatible.
+## Residual risks and follow-up
+- Root-based redaction is not semantic secret detection. Add all authentication, token, account, and moderation commands from installed plugins; aliases may require separate entries.
+- The bounded in-memory queue intentionally drops events during overload and on shutdown. There is no durable delivery or retry/backoff queue.
+- Bukkit's player command preprocess event does not observe every command dispatched by plugins or the console.
+- A malicious or compromised server plugin can still access configuration and the webhook secret.
+- Dependency, real-server compatibility, and rate-limit behavior must be verified in CI and on a staging Paper server. Do not describe the project as vulnerability-free.
