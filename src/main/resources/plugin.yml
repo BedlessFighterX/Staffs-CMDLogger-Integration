@@ -1,12 +1,23 @@
 name: CMDLoggerIntegration
-version: '${project.version}'
+version: '2.0.0'
 main: com.infinity.cmdloggerintegration.CMDLoggerIntegration
 api-version: '1.16'
-load: STARTUP
+load: POSTWORLD
+author: BedlessFighterX
+website: https://github.com/BedlessFighterX/Staffs-CMDLogger-Integration
+description: Logs commands from permitted staff to a Discord webhook.
 commands:
   cmdlogger:
-    description: The main command
+    description: View plugin information or reload its configuration.
+    usage: /cmdlogger [reload]
+    permission: cmdlogger.use
 permissions:
   cmdlogger.staff:
-    description: Makes someone a staff to the plugin
+    description: Commands executed by this player are sent to the configured staff log.
+    default: op
+  cmdlogger.use:
+    description: Allows use of the CMDLogger command.
+    default: true
+  cmdlogger.admin:
+    description: Allows reloading CMDLogger configuration.
     default: op
