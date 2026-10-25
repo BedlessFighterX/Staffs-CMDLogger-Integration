@@ -1,7 +1,6 @@
 name: CMDLoggerIntegration
 version: '3.3.0'
 main: com.infinity.cmdloggerintegration.CMDLoggerIntegration
-api-version: '1.21'
 load: POSTWORLD
 author: BedlessFighterX
 website: https://github.com/BedlessFighterX/Staffs-CMDLogger-Integration
