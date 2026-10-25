@@ -129,7 +129,7 @@ public final class DiscordWebhook {
         if (retryAfter != null) {
             try {
                 long seconds = Long.parseLong(retryAfter.trim());
-                return Math.max(0L, Math.min(seconds * 1000L, 5000L));
+                return seconds <= 0L ? 0L : Math.min(seconds, 5L) * 1000L;
             } catch (NumberFormatException ignored) {
                 // Discord may omit or change this header; use bounded backoff below.
             }
