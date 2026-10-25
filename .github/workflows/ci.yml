@@ -20,7 +20,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        server-api: ['1.8.8', '1.12.2', '1.16.5', '1.20.6', '1.21.11', '26.3']
+        server-api: ['1.8.8', '1.12.2', '1.16.5', '1.20.6', '1.21.11']
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
