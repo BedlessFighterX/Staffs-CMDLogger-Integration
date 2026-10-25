@@ -28,18 +28,28 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
-      - name: Set up Java 21
+      - name: Set up Java 25
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
           cache: gradle
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
-          gradle-version: '8.14.3'
-      - name: Build and test
-        run: gradle clean test build --no-daemon
+          gradle-version: '9.1.0'
+      - name: Build and test universal Java 8-compatible JAR
+        run: gradle clean test build --no-daemon -PserverApiVersion=1.8.8
+      - name: Verify bytecode targets Java 8
+        run: |
+          set -euo pipefail
+          CLASS_FILE="$(find build/classes/java/main -name 'CMDLoggerIntegration.class' -print -quit)"
+          test -n "$CLASS_FILE"
+          MAJOR="$(od -An -t u2 -j 6 -N 2 "$CLASS_FILE" | tr -d ' ')"
+          if [[ "$MAJOR" != "13312" && "$MAJOR" != "52" ]]; then
+            echo "::error::Expected Java 8 class-file major version 52, got $MAJOR"
+            exit 1
+          fi
       - name: Determine and validate release tag
         id: release_meta
         shell: bash
@@ -57,27 +67,21 @@ jobs:
             echo "::error::Could not read project version from build.gradle"
             exit 1
           fi
-
           if [[ "$EVENT_NAME" == "push" && "$REF" == "refs/heads/master" ]]; then
-            # Every master push gets a unique release tag, including merge commits.
             RELEASE_TAG="v${VERSION}-build.${RUN_NUMBER}"
           elif [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             RELEASE_TAG="$INPUT_TAG"
           else
             RELEASE_TAG="$REF_NAME"
           fi
-
-          # Escape dots in the version before using it as a regular expression.
           VERSION_REGEX="${VERSION//./\\.}"
           if [[ "$RELEASE_TAG" != "v$VERSION" && ! "$RELEASE_TAG" =~ ^v${VERSION_REGEX}-build\.[1-9][0-9]*$ ]]; then
             echo "::error::Release tag '$RELEASE_TAG' must be v$VERSION or v$VERSION-build.N (N must be a positive integer)"
             exit 1
           fi
-
           echo "tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Publishing $RELEASE_TAG from $COMMIT_SHA"
-
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:

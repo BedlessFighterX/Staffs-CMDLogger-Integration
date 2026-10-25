@@ -5,25 +5,35 @@ plugins {
 group = 'com.infinity'
 version = '3.3.0'
 
+def targetApiVersion = providers.gradleProperty('serverApiVersion').getOrElse('1.8.8')
+
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
 }
 
 repositories {
     mavenCentral()
+    maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
     maven { url = 'https://repo.papermc.io/repository/maven-public/' }
 }
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
+    // Use Spigot's published API snapshots consistently across all matrix versions.
+    compileOnly "org.spigotmc:spigot-api:${targetApiVersion}-R0.1-SNAPSHOT"
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.release = 21
+}
+
+// The plugin itself must remain Java 8 bytecode. Tests may use the modern JDK
+// APIs provided by the CI toolchain (for example List.of and String.repeat).
+tasks.named('compileJava', JavaCompile).configure {
+    options.release = 8
 }
 
 test {
@@ -32,4 +42,11 @@ test {
 
 jar {
     archiveBaseName = 'CMDLoggerIntegration'
+    manifest {
+        attributes(
+            'Implementation-Title': 'CMDLoggerIntegration',
+            'Implementation-Version': project.version,
+            'Minecraft-API-Tested': targetApiVersion
+        )
+    }
 }
