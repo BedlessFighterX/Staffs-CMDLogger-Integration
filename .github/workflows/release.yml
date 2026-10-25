@@ -67,8 +67,10 @@ jobs:
             RELEASE_TAG="$REF_NAME"
           fi
 
-          if [[ "$RELEASE_TAG" != "v$VERSION" && "$RELEASE_TAG" != "v$VERSION-build."* ]]; then
-            echo "::error::Release tag '$RELEASE_TAG' must be v$VERSION or v$VERSION-build.N"
+          # Escape dots in the version before using it as a regular expression.
+          VERSION_REGEX="${VERSION//./\\.}"
+          if [[ "$RELEASE_TAG" != "v$VERSION" && ! "$RELEASE_TAG" =~ ^v${VERSION_REGEX}-build\.[1-9][0-9]*$ ]]; then
+            echo "::error::Release tag '$RELEASE_TAG' must be v$VERSION or v$VERSION-build.N (N must be a positive integer)"
             exit 1
           fi
 
