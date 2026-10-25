@@ -114,7 +114,7 @@ public final class DiscordWebhook {
         throw lastFailure == null ? new IOException("Discord webhook delivery failed") : lastFailure;
     }
 
-    private static boolean isRetryable(int status) {
+    static boolean isRetryable(int status) {
         return status == 429 || status >= 500 && status <= 599;
     }
 
