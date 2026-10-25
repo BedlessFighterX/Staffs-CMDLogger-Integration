@@ -6,7 +6,6 @@ group = 'com.infinity'
 version = '3.3.0'
 
 def targetApiVersion = providers.gradleProperty('serverApiVersion').getOrElse('1.8.8')
-def paperApiVersion = ['1.20.6', '1.21.11'].contains(targetApiVersion)
 
 java {
     toolchain {
@@ -21,12 +20,10 @@ repositories {
 }
 
 dependencies {
-    if (paperApiVersion) {
-        compileOnly "io.papermc.paper:paper-api:${targetApiVersion}-R0.1-SNAPSHOT"
-    } else {
-        compileOnly "org.spigotmc:spigot-api:${targetApiVersion}-R0.1-SNAPSHOT"
-    }
+    // Use Spigot's published API snapshots consistently across all matrix versions.
+    compileOnly "org.spigotmc:spigot-api:${targetApiVersion}-R0.1-SNAPSHOT"
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.withType(JavaCompile).configureEach {
