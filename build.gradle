@@ -6,7 +6,7 @@ group = 'com.infinity'
 version = '3.3.0'
 
 def targetApiVersion = providers.gradleProperty('serverApiVersion').getOrElse('1.8.8')
-def modernCalendarVersion = targetApiVersion.startsWith('26.')
+def paperApiVersion = ['1.20.6', '1.21.11'].contains(targetApiVersion)
 
 java {
     toolchain {
@@ -21,7 +21,7 @@ repositories {
 }
 
 dependencies {
-    if (modernCalendarVersion) {
+    if (paperApiVersion) {
         compileOnly "io.papermc.paper:paper-api:${targetApiVersion}-R0.1-SNAPSHOT"
     } else {
         compileOnly "org.spigotmc:spigot-api:${targetApiVersion}-R0.1-SNAPSHOT"
@@ -31,7 +31,11 @@ dependencies {
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    // Keep output loadable on Java 8 servers while building with a modern JDK.
+}
+
+// The plugin itself must remain Java 8 bytecode. Tests may use the modern JDK
+// APIs provided by the CI toolchain (for example List.of and String.repeat).
+tasks.named('compileJava', JavaCompile).configure {
     options.release = 8
 }
 
