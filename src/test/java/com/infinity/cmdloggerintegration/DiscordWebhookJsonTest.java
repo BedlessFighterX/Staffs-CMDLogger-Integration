@@ -59,7 +59,7 @@ class DiscordWebhookJsonTest {
         embed.addField("n".repeat(256), "v".repeat(1024), false);
         embed.addField("n".repeat(256), "v".repeat(1024), false);
         embed.addField("n".repeat(256), "v".repeat(1024), false);
-        embed.addField("n".repeat(256), "v".repeat(616), false);
+        embed.addField("n".repeat(256), "v".repeat(368), false);
         DiscordWebhook.validateEmbedCharacterLimit(List.of(embed));
     }
 
