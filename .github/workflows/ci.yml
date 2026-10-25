@@ -2,7 +2,7 @@ name: Build and test
 
 on:
   push:
-    branches: [master, 'hardening/**', 'release-automation-and-hardening', 'security/**']
+    branches: [master, 'compat/**', 'hardening/**', 'release-automation-and-hardening', 'security/**']
   pull_request:
   workflow_dispatch:
 
@@ -15,26 +15,31 @@ concurrency:
 
 jobs:
   build:
+    name: API compatibility / Minecraft ${{ matrix.server-api }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        server-api: ['1.8.8', '1.12.2', '1.16.5', '1.20.6', '1.21.11', '26.3']
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up Java 21
+      - name: Set up Java 25
         uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
           cache: gradle
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6 # v6.4.0
         with:
-          gradle-version: '8.14.3'
-      - name: Build and test
-        run: gradle clean test build --no-daemon
+          gradle-version: '9.1.0'
+      - name: Build and test against server API
+        run: gradle clean test build --no-daemon -PserverApiVersion=${{ matrix.server-api }}
       - name: Upload plugin JAR
         if: success()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: CMDLoggerIntegration-${{ github.sha }}
+          name: CMDLoggerIntegration-mc-${{ matrix.server-api }}-${{ github.sha }}
           path: build/libs/*.jar
           if-no-files-found: error
