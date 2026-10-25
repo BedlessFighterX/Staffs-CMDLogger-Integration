@@ -55,30 +55,86 @@ public final class DiscordWebhook {
         }
         body.append("]}");
 
-        HttpsURLConnection connection = (HttpsURLConnection) new URL(url).openConnection();
-        connection.setInstanceFollowRedirects(false);
-        connection.setUseCaches(false);
-        connection.setConnectTimeout(5000);
-        connection.setReadTimeout(5000);
-        connection.setRequestMethod("POST");
-        connection.setDoOutput(true);
-        connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
-        connection.setRequestProperty("User-Agent", "CMDLoggerIntegration/3.1");
         byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
-        connection.setFixedLengthStreamingMode(payload.length);
-        try {
-            try (OutputStream output = connection.getOutputStream()) { output.write(payload); }
-            int status = connection.getResponseCode();
-            if (status < 200 || status >= 300) {
+        IOException lastFailure = null;
+
+        // Retry only transient responses. The caller already runs on the bounded
+        // delivery executor, so backoff never blocks the Minecraft server thread.
+        for (int attempt = 1; attempt <= 3; attempt++) {
+            HttpsURLConnection connection = null;
+            try {
+                connection = (HttpsURLConnection) new URL(url).openConnection();
+                connection.setInstanceFollowRedirects(false);
+                connection.setUseCaches(false);
+                connection.setConnectTimeout(5000);
+                connection.setReadTimeout(5000);
+                connection.setRequestMethod("POST");
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Content-Type", "application/json; charset=utf-8");
+                connection.setRequestProperty("User-Agent", "CMDLoggerIntegration/3.3");
+                connection.setFixedLengthStreamingMode(payload.length);
+
+                try (OutputStream output = connection.getOutputStream()) {
+                    output.write(payload);
+                }
+                int status = connection.getResponseCode();
+                if (status >= 200 && status < 300) {
+                    InputStream response = connection.getInputStream();
+                    if (response != null) response.close();
+                    return;
+                }
+
                 InputStream error = connection.getErrorStream();
                 if (error != null) error.close();
-                throw new IOException("Discord webhook returned HTTP " + status);
+                IOException failure = new IOException("Discord webhook returned HTTP " + status);
+                if (!isRetryable(status) || attempt == 3) throw failure;
+                lastFailure = failure;
+                long delay = retryDelayMillis(connection, attempt);
+                connection.disconnect();
+                connection = null;
+                try {
+                    Thread.sleep(delay);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted while waiting to retry Discord delivery", interrupted);
+                }
+            } catch (IOException ex) {
+                if (attempt == 3 || !isTransientNetworkFailure(ex)) throw ex;
+                lastFailure = ex;
+                try {
+                    Thread.sleep(250L * attempt);
+                } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IOException("Interrupted while waiting to retry Discord delivery", interrupted);
+                }
+            } finally {
+                if (connection != null) connection.disconnect();
             }
-            InputStream response = connection.getInputStream();
-            if (response != null) response.close();
-        } finally {
-            connection.disconnect();
         }
+        throw lastFailure == null ? new IOException("Discord webhook delivery failed") : lastFailure;
+    }
+
+    static boolean isRetryable(int status) {
+        return status == 429 || status >= 500 && status <= 599;
+    }
+
+    private static boolean isTransientNetworkFailure(IOException ex) {
+        // HTTP status failures are handled explicitly above; IO failures such as
+        // timeouts and connection resets are safe to retry a limited number of times.
+        return !(ex.getMessage() != null && ex.getMessage().startsWith("Discord webhook returned HTTP "));
+    }
+
+    private static long retryDelayMillis(HttpsURLConnection connection, int attempt) {
+        String retryAfter = connection.getHeaderField("Retry-After");
+        if (retryAfter != null) {
+            try {
+                long seconds = Long.parseLong(retryAfter.trim());
+                return seconds <= 0L ? 0L : Math.min(seconds, 5L) * 1000L;
+            } catch (NumberFormatException ignored) {
+                // Discord may omit or change this header; use bounded backoff below.
+            }
+        }
+        return Math.min(250L * (1L << (attempt - 1)), 2000L);
     }
 
     static String json(String value) {
