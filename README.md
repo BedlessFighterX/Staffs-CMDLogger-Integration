@@ -4,11 +4,11 @@ A Paper/Spigot plugin that forwards staff player commands—and optionally serve
 
 ## Minecraft and Java compatibility
 
-The goal is one universal JAR for **Minecraft Java Edition 1.8.8 through the latest stable server API**. The code is compiled to Java 8 bytecode and deliberately uses the legacy Bukkit/Spigot API surface, while CI compiles and tests against API checkpoints spanning 1.8.8, 1.12.2, 1.16.5, 1.20.6, 1.21.11, and 26.3.
+The goal is one universal JAR for **Minecraft Java Edition 1.8.8 through the latest stable server API**. The code is compiled to Java 8 bytecode and deliberately uses the legacy Bukkit/Spigot API surface, while CI compiles and tests against API checkpoints spanning 1.8.8, 1.12.2, 1.16.5, 1.20.6, and 1.21.11. The 26.x API is not currently part of the automated compatibility matrix.
 
 - **Minecraft 1.8.8–1.16.5:** Java 8 is supported by the server; the plugin bytecode targets Java 8.
 - **Minecraft 1.17–1.21.11:** use the Java version required by your server (generally Java 17/21 depending on version).
-- **Minecraft 26.1+:** use Java 25 or newer, as required by current server software.
+- **Newer Minecraft releases:** use the Java version required by your server software. Compatibility beyond the listed CI checkpoints has not yet been verified.
 - **Server software:** Spigot and Paper are the intended Bukkit-compatible platforms. Other forks may work but are not guaranteed.
 - **Compatibility testing:** CI validates compilation and unit tests against API checkpoints. It does not replace runtime testing on every server build. Test on a staging server before production use.
 
@@ -23,7 +23,6 @@ Requires JDK 25 and Gradle 9.1.0 for the current build configuration.
 By default, the universal JAR is compiled against the Spigot 1.8.8 API and written to build/libs/CMDLoggerIntegration-3.3.0.jar. To compile against a specific API checkpoint:
 
     gradle clean test build -PserverApiVersion=1.21.11
-    gradle clean test build -PserverApiVersion=26.3
 
 Gradle is the supported build system; Maven has been removed.
 
