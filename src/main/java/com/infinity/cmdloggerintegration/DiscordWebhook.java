@@ -27,6 +27,7 @@ public final class DiscordWebhook {
     public void execute() throws IOException {
         if (embeds.isEmpty()) throw new IllegalArgumentException("At least one embed is required");
         if (embeds.size() > 10) throw new IllegalArgumentException("Discord allows at most 10 embeds per webhook");
+        validateEmbedCharacterLimit(embeds);
         if (!WebhookUrlValidator.isValid(url)) throw new IllegalArgumentException("Webhook URL is not a valid Discord webhook URL");
 
         StringBuilder body = new StringBuilder("{\"username\":").append(json(username))
@@ -112,6 +113,20 @@ public final class DiscordWebhook {
             }
         }
         throw lastFailure == null ? new IOException("Discord webhook delivery failed") : lastFailure;
+    }
+
+    /** Validate Discord's 6,000-character combined textual embed limit before network I/O. */
+    static void validateEmbedCharacterLimit(List<EmbedObject> embeds) {
+        int total = 0;
+        for (EmbedObject embed : embeds) {
+            if (embed.title != null) total += embed.title.length();
+            if (embed.footer != null) total += embed.footer.length();
+            for (Field field : embed.fields) {
+                total += field.name.length() + field.value.length();
+                if (total > 6000) throw new IllegalArgumentException("Combined Discord embed text exceeds 6000 characters");
+            }
+            if (total > 6000) throw new IllegalArgumentException("Combined Discord embed text exceeds 6000 characters");
+        }
     }
 
     static boolean isRetryable(int status) {
