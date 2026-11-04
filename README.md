@@ -1,7 +1,6 @@
-<p align="center">
-  <h1 align="center">CMDLoggerIntegration</h1>
-  <p align="center">Privacy-conscious staff command auditing for Bukkit-compatible Minecraft servers.</p>
-</p>
+# CMDLoggerIntegration
+
+<p align="center">Privacy-conscious staff command auditing for Bukkit-compatible Minecraft servers.</p>
 
 <p align="center">
   <a href="https://github.com/BedlessFighterX/Staffs-CMDLogger-Integration/actions/workflows/ci.yml"><img src="https://github.com/BedlessFighterX/Staffs-CMDLogger-Integration/actions/workflows/ci.yml/badge.svg?branch=master" alt="Build and test" /></a>
