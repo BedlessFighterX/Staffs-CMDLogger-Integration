@@ -1,59 +1,49 @@
 # CMDLoggerIntegration
 
-<p align="center">Privacy-conscious staff command auditing for Bukkit-compatible Minecraft servers.</p>
+A Bukkit plugin that sends selected staff command events to a Discord webhook. Console command logging is optional, and command arguments are redacted by default.
 
-<p align="center">
-  <a href="https://github.com/BedlessFighterX/Staffs-CMDLogger-Integration/actions/workflows/ci.yml"><img src="https://github.com/BedlessFighterX/Staffs-CMDLogger-Integration/actions/workflows/ci.yml/badge.svg?branch=master" alt="Build and test" /></a>
-  <img src="https://img.shields.io/badge/version-3.3.0-2563EB?style=flat-square" alt="Version 3.3.0" />
-  <img src="https://img.shields.io/badge/Java_Bytecode-8-ED8B00?style=flat-square&logo=openjdk&logoColor=white" alt="Java 8 bytecode" />
-  <img src="https://img.shields.io/badge/Server-Paper_%7C_Spigot-2D2D2D?style=flat-square" alt="Paper and Spigot" />
-  <img src="https://img.shields.io/badge/Build-Gradle-02303A?style=flat-square&logo=gradle&logoColor=white" alt="Gradle" />
-</p>
+[Build workflow](https://github.com/BedlessFighterX/Staffs-CMDLogger-Integration/actions/workflows/ci.yml) · [Releases](https://github.com/BedlessFighterX/Staffs-CMDLogger-Integration/releases)
 
-## Overview
+## Features
 
-**CMDLoggerIntegration** is a Java plugin that forwards configured staff-player command events to a Discord webhook. Optional console-command auditing, configurable exclusions, and privacy-first argument redaction help server administrators control what leaves the server.
-
-## Highlights
-
-- **Discord audit embeds** — send configured command activity to a designated webhook channel.
-- **Privacy-first defaults** — command arguments are redacted by default; console auditing is opt-in.
-- **Flexible filtering** — exclude selected command roots and player names, and maintain a list of sensitive command roots.
-- **Operational controls** — reload configuration, check status, inspect queue diagnostics, and send a test event.
-- **Bounded asynchronous delivery** — network work runs away from the game thread and uses a fixed-size queue to avoid unbounded memory growth.
-- **Safer webhook handling** — webhook URLs are validated, redirects are disabled, and untrusted command text is sanitized before it is sent.
+- Send staff command events to a Discord webhook.
+- Optionally log commands entered in the server console.
+- Ignore selected players and command roots.
+- Redact command arguments, including arguments for configured sensitive commands.
+- Reload the configuration and check delivery status from in-game commands.
+- Send webhook requests asynchronously using a bounded queue.
 
 ## Compatibility
 
-The project compiles and runs unit tests against selected Spigot API checkpoints:
+The CI workflow compiles and runs unit tests against these Spigot API checkpoints:
 
-| Minecraft / API checkpoint | CI validation |
+| API checkpoint | CI checks |
 |---|---|
-| 1.8.8 | Compile + unit tests |
-| 1.12.2 | Compile + unit tests |
-| 1.16.5 | Compile + unit tests |
-| 1.20.6 | Compile + unit tests |
-| 1.21.11 | Compile + unit tests |
+| 1.8.8 | Compile and unit tests |
+| 1.12.2 | Compile and unit tests |
+| 1.16.5 | Compile and unit tests |
+| 1.20.6 | Compile and unit tests |
+| 1.21.11 | Compile and unit tests |
 
-The plugin is compiled to **Java 8 bytecode**. The server must still run on the Java version required by its Minecraft release. Paper and other Bukkit-compatible forks may work, but are not guaranteed.
+The plugin is compiled to Java 8 bytecode. The server must still use the Java runtime required by its Minecraft version. Paper and other Bukkit-compatible forks may work, but they are not all tested.
 
-These are API-level CI checkpoints, not live-server tests for every release or fork. Compatibility outside the listed checkpoints has not been verified. The plugin descriptor intentionally omits `api-version` for legacy compatibility; test startup behavior on your target server.
+These are API-level CI checks, not live tests on every Minecraft release or server fork. Compatibility outside the listed checkpoints has not been verified.
 
 ## Installation
 
 1. Download the JAR from [GitHub Releases](https://github.com/BedlessFighterX/Staffs-CMDLogger-Integration/releases).
-2. Stop the server and back up the server and existing plugin configuration.
-3. Place the JAR in the server's `plugins/` directory.
+2. Stop the server and back up the server and plugin configuration.
+3. Put the JAR in the server's `plugins/` directory.
 4. Start the server once to generate `plugins/CMDLoggerIntegration/config.yml`.
-5. Add a Discord webhook URL to `webhook-url` in the generated configuration.
-6. Grant `cmdlogger.staff` to the players whose commands should be audited.
-7. Review privacy and exclusion settings, then restart or run `/cmdlogger reload`.
+5. Add your Discord webhook URL to `webhook-url` in the generated configuration.
+6. Give `cmdlogger.staff` to the players whose commands should be logged.
+7. Review the privacy settings, then restart the server or run `/cmdlogger reload`.
 
-Existing configuration values are preserved during upgrades and new default keys are merged. Review the generated configuration after upgrading, especially `redact-all-arguments`.
+The plugin keeps existing configuration values when it adds new defaults during an upgrade. Review the configuration after updating, especially `redact-all-arguments`.
 
-## Configuration essentials
+## Configuration
 
-The safest default configuration keeps arguments on the server and leaves console auditing disabled:
+The default settings keep command arguments on the server and leave console logging disabled:
 
 ```yaml
 webhook-url: 'your-webhook-url'
@@ -72,68 +62,57 @@ redacted-commands:
   - 'password'
 ```
 
-See the [full user guide](docs/USER_GUIDE.md) for every setting, setup instructions, troubleshooting, and privacy guidance.
+See [docs/USER_GUIDE.md](docs/USER_GUIDE.md) for the full configuration reference, webhook setup, and troubleshooting.
 
 ## Commands and permissions
 
-| Command / permission | Access | Purpose |
+| Command or permission | Access | Description |
 |---|---|---|
-| `/cmdlogger help` | `cmdlogger.use` | Display plugin help |
-| `/cmdlogger reload` | `cmdlogger.admin` | Validate and reload configuration |
-| `/cmdlogger status` | `cmdlogger.admin` | Show configuration and delivery status |
-| `/cmdlogger diagnostics` | `cmdlogger.admin` | Inspect queue and diagnostic details |
-| `/cmdlogger test` | `cmdlogger.admin` | Send a test Discord embed |
-| `cmdlogger.staff` | Operators by default | Enable auditing for a player's commands |
+| `/cmdlogger help` | `cmdlogger.use` | Show the help message |
+| `/cmdlogger reload` | `cmdlogger.admin` | Validate and reload the configuration |
+| `/cmdlogger status` | `cmdlogger.admin` | Show configuration and queue status |
+| `/cmdlogger diagnostics` | `cmdlogger.admin` | Show detailed queue information |
+| `/cmdlogger test` | `cmdlogger.admin` | Send a test embed |
+| `cmdlogger.staff` | Operators by default | Log commands issued by the player |
 | `cmdlogger.use` | Everyone by default | Allow use of the plugin command |
 | `cmdlogger.admin` | Operators by default | Allow administrative commands |
 
-Administrative subcommands are only suggested in tab completion to senders with the admin permission.
+## Privacy
 
-## Privacy and security
+Command arguments can contain passwords, tokens, or other private information. With `redact-all-arguments: true`, only the command root is sent to Discord. This is the recommended setting for most servers.
 
-Command lines can contain passwords, tokens, personal data, or other sensitive values. The default `redact-all-arguments: true` setting sends command roots while keeping all arguments on the server. Disable it only when your audit policy requires argument-level logging, and review `redacted-commands` for authentication commands added by other plugins.
+When argument logging is enabled, review `redacted-commands` and add authentication commands from other plugins. The built-in list is only a starting point and may not include every command or alias used by your server.
 
-Treat the Discord webhook URL like a password. Keep the receiving channel access-controlled, never commit a live webhook URL, and rotate it immediately if it is exposed. The built-in sensitive-command list is a baseline, not a guarantee that every third-party command or alias is covered.
+Treat the Discord webhook URL like a password. Do not commit it to the repository or post it in issues. Restrict access to the Discord channel and rotate the webhook if it is exposed.
 
-## Build and test
+## Build
 
-The current build requires **JDK 25** and **Gradle 9.1.0**. The resulting plugin bytecode targets Java 8.
+The current build uses JDK 25 and Gradle 9.1.0. The plugin itself is compiled to Java 8 bytecode.
 
 ```bash
 gradle clean test build
 ```
 
-To compile against a specific API checkpoint:
+To build against a particular API checkpoint:
 
 ```bash
 gradle clean test build -PserverApiVersion=1.21.11
 ```
 
-The default artifact is:
+The default JAR is written to `build/libs/CMDLoggerIntegration-3.3.0.jar`.
 
-```text
-build/libs/CMDLoggerIntegration-3.3.0.jar
-```
+## Limitations
 
-## Known limitations
+- Events can be lost if the network request fails, the queue fills, or the server shuts down. The queue is not persistent.
+- The Bukkit player command event does not capture every command run internally by other plugins.
+- Console logging covers standard server-console commands; it does not guarantee coverage of RCON, command blocks, or internal plugin dispatch.
+- CI checks selected API versions, but you should test the plugin on the server versions you actually use.
 
-- Delivery is not durable. Network failures, queue overload, or server shutdown can result in lost events.
-- The queue is bounded; new events may be dropped when it is full.
-- Bukkit player command preprocessing does not observe every command dispatched internally by other plugins.
-- Optional console auditing covers standard console commands; it does not promise complete coverage of RCON, command blocks, or internal plugin dispatch.
-- CI validates compilation and unit tests at selected API checkpoints; it does not replace testing on the exact server builds you operate.
+This plugin should not be treated as a tamper-proof or lossless audit system.
 
-Do not treat the plugin as a tamper-proof or legally complete audit system. Use a durable external audit pipeline when lossless or independently verifiable records are required.
+## More information
 
-## Documentation and license
-
-- [Full user guide](docs/USER_GUIDE.md)
+- [User guide](docs/USER_GUIDE.md)
 - [Security policy](SECURITY.md)
 - [Audit notes](AUDIT.md)
 - [MIT License](LICENSE)
-
----
-
-<p align="center">
-  <sub>Built for clearer staff operations — with privacy and operational limits kept visible.</sub>
-</p>
