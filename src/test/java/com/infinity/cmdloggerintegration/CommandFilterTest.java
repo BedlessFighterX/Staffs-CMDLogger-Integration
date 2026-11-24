@@ -7,7 +7,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CommandFilterTest {
     @Test void matchesCommandAndArguments() { assertTrue(CommandFilter.shouldIgnore("/plugins list", Collections.singletonList("plugins"))); }
-    @Test void matchesCaseInsensitivelyAndNamespacedCommands() { assertTrue(CommandFilter.shouldIgnore("/minecraft:PLUGINS", Arrays.asList("plugins"))); }
+    @Test void matchesCaseInsensitivelyAndNamespacedCommands() {
+        // Full namespace-qualified labels must be listed explicitly; the bare root no longer matches namespaced forms.
+        assertTrue(CommandFilter.shouldIgnore("/minecraft:PLUGINS", Arrays.asList("minecraft:plugins")));
+        assertFalse(CommandFilter.shouldIgnore("/minecraft:PLUGINS", Arrays.asList("plugins")));
+        assertTrue(CommandFilter.shouldIgnore("/Essentials:Msg", Arrays.asList("essentials:msg")));
+    }
     @Test void doesNotMatchPartialCommandNames() { assertFalse(CommandFilter.shouldIgnore("/pluginsomething", Collections.singletonList("plugins"))); }
     @Test void safelyHandlesMissingValues() {
         assertFalse(CommandFilter.shouldIgnore(null, Collections.singletonList("plugins")));
@@ -15,7 +20,7 @@ class CommandFilterTest {
     }
     @Test void redactsArgumentsForSensitiveCommandRoots() {
         assertEquals("/login [arguments redacted]", CommandFilter.redactArguments("/login MyPassword123", Collections.singletonList("login")));
-        assertEquals("/minecraft:register [arguments redacted]", CommandFilter.redactArguments("/minecraft:register name secret", Collections.singletonList("register")));
+        assertEquals("/minecraft:register [arguments redacted]", CommandFilter.redactArguments("/minecraft:register name secret", Collections.singletonList("minecraft:register")));
     }
     @Test void preservesArgumentsForNonSensitiveRoots() {
         assertEquals("/say hello world", CommandFilter.redactArguments("/say hello world", Collections.singletonList("login")));
@@ -34,5 +39,6 @@ class CommandFilterTest {
     @Test void sanitizesDiscordMarkdownAndControlCharacters() {
         assertEquals("/say \\*hello\\* \\@everyone", CommandFilter.sanitizeForDiscord("/say *hello* @everyone"));
         assertEquals("/say hello world", CommandFilter.sanitizeForDiscord("/say hello\nworld"));
+        assertEquals("/say \\<\\@123456789\\>", CommandFilter.sanitizeForDiscord("/say <@123456789>"));
     }
 }

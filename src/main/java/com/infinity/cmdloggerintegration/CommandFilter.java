@@ -14,14 +14,12 @@ final class CommandFilter {
         if (value.startsWith("/")) value = value.substring(1);
         int space = firstWhitespace(value);
         String root = space < 0 ? value : value.substring(0, space);
-        int colon = root.indexOf(':');
-        String plain = colon < 0 ? root : root.substring(colon + 1);
 
         for (String item : roots) {
             if (item == null) continue;
             String candidate = item.trim().toLowerCase(Locale.ROOT);
             while (candidate.startsWith("/")) candidate = candidate.substring(1);
-            if (!candidate.isEmpty() && (candidate.equals(root) || candidate.equals(plain))) return true;
+            if (!candidate.isEmpty() && candidate.equals(root)) return true;
         }
         return false;
     }
@@ -61,7 +59,7 @@ final class CommandFilter {
                 }
                 continue;
             }
-            if ("\\*_~`|>#[]()@".indexOf(c) >= 0) safe.append('\\');
+            if ("\\*_~`|<>#[]()@".indexOf(c) >= 0) safe.append('\\');
             safe.append(c);
         }
         return safe.toString().trim();

@@ -34,4 +34,23 @@ class WebhookUrlValidationTest {
         assertFalse(WebhookUrlValidator.isValid("https://discord.com/api/webhooks/123456789012345678/token with spaces"));
         assertFalse(WebhookUrlValidator.isValid("https://user@discord.com/api/webhooks/123456789012345678/token"));
     }
+
+    @Test
+    void rejectsPercentEncodedPathSegmentsThatDecodeToAllowedCharacters() {
+        assertFalse(WebhookUrlValidator.isValid("https://discord.com/api/webhooks/123456789012345678/token%2E"));
+        assertFalse(WebhookUrlValidator.isValid("https://discord.com/api%2Fwebhooks/123456789012345678/token"));
+    }
+
+    @Test
+    void acceptsExplicitPort443AndOmitsPortEqually() {
+        assertTrue(WebhookUrlValidator.isValid("https://discord.com/api/webhooks/123456789012345678/secret-token"));
+        assertTrue(WebhookUrlValidator.isValid("https://discord.com:443/api/webhooks/123456789012345678/secret-token"));
+        assertTrue(WebhookUrlValidator.isValid("https://discordapp.com/api/webhooks/123456789012345678/secret-token/"));
+    }
+
+    @Test
+    void rejectsUnexpectedPortsEvenOnAllowedHosts() {
+        assertFalse(WebhookUrlValidator.isValid("https://discord.com:8443/api/webhooks/123456789012345678/token"));
+        assertFalse(WebhookUrlValidator.isValid("https://discord.com:80/api/webhooks/123456789012345678/token"));
+    }
 }

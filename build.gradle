@@ -9,12 +9,13 @@ def targetApiVersion = providers.gradleProperty('serverApiVersion').getOrElse('1
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+        languageVersion = JavaLanguageVersion.current()
     }
 }
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
     maven { url = 'https://repo.papermc.io/repository/maven-public/' }
 }
@@ -36,8 +37,21 @@ tasks.named('compileJava', JavaCompile).configure {
     options.release = 8
 }
 
+tasks.named('compileTestJava', JavaCompile).configure {
+    // Tests run on the CI toolchain JDK; do not restrict to Java 8 bytecode.
+}
+
+configurations.configureEach {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 test {
     useJUnitPlatform()
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat 'full'
+    }
+    maxParallelForks = 1
 }
 
 jar {

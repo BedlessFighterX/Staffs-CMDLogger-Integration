@@ -1,7 +1,7 @@
 # Security policy
 
 ## Supported security assumptions
-- Java 21 and Paper 1.21.4 are the current build/runtime baseline.
+- The project is built with JDK 25 (Gradle 9.1.0) and compiles to Java 8 bytecode against Spigot API checkpoints 1.8.8 through 1.21.11. The server must run the Java runtime required by its Minecraft version.
 - Discord webhook URLs are secrets and should be configured only on the server.
 - Only players granted cmdlogger.staff have their player commands logged. Standard console command logging is separately opt-in with log-console-commands: true and remains disabled by default.
 - Command exclusions and argument redaction are configurable. Review commands and aliases added by server plugins.
