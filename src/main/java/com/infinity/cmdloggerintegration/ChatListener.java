@@ -17,7 +17,7 @@ public final class ChatListener implements Listener {
 
     public ChatListener(CMDLoggerIntegration plugin) { this.plugin = plugin; }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onCommandSend(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
         if (!player.hasPermission("cmdlogger.staff")) return;
@@ -45,6 +45,9 @@ public final class ChatListener implements Listener {
         final String serverName = plugin.getConfig().getString("embed.server-name", "Minecraft Server");
         final Instant occurredAt = Instant.now();
 
+        if (!WebhookUrlValidator.isValid(webhookUrl)) {
+            return;
+        }
         plugin.submitDelivery(() -> {
             try {
                 DiscordWebhook webhook = new DiscordWebhook(webhookUrl);
@@ -92,6 +95,9 @@ public final class ChatListener implements Listener {
         final String serverName = plugin.getConfig().getString("embed.server-name", "Minecraft Server");
         final Instant occurredAt = Instant.now();
 
+        if (!WebhookUrlValidator.isValid(webhookUrl)) {
+            return;
+        }
         plugin.submitDelivery(() -> {
             try {
                 DiscordWebhook webhook = new DiscordWebhook(webhookUrl);

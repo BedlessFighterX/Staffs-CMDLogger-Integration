@@ -2,7 +2,7 @@
 
 ## Scope and confidence
 
-This is a source-level review and regression-test record, not a penetration test or a guarantee that the project has no vulnerabilities. The current runtime baseline is Java 21 and Paper 1.21.4. Live server behavior, permission integration, and real webhook delivery still require staging validation.
+This is a source-level review and regression-test record, not a penetration test or a guarantee that the project has no vulnerabilities. The project is built with JDK 25 (Gradle 9.1.0) and compiles to Java 8 bytecode against Spigot API checkpoints 1.8.8 through 1.21.11. The server must run the Java runtime required by its Minecraft version. Live server behavior, permission integration, and real webhook delivery still require staging validation.
 
 ## Remediated findings
 

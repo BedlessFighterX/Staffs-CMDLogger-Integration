@@ -18,8 +18,10 @@ final class WebhookUrlValidator {
             if (uri.getPort() != -1 && uri.getPort() != 443) return false;
             if (!"discord.com".equalsIgnoreCase(host) &&
                     !"discordapp.com".equalsIgnoreCase(host)) return false;
-            return uri.getPath() != null &&
-                    uri.getPath().matches("/api/webhooks/[0-9]{5,25}/[A-Za-z0-9._-]{1,200}/?");
+            String path = uri.getPath() == null ? "" : uri.getPath();
+            if (!path.matches("/api/webhooks/[0-9]{5,25}/[A-Za-z0-9._-]{1,200}/?")) return false;
+            if (!uri.getRawPath().equals(path)) return false;
+            return true;
         } catch (IllegalArgumentException ex) {
             return false;
         }
