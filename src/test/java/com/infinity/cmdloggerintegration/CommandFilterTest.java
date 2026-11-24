@@ -39,6 +39,6 @@ class CommandFilterTest {
     @Test void sanitizesDiscordMarkdownAndControlCharacters() {
         assertEquals("/say \\*hello\\* \\@everyone", CommandFilter.sanitizeForDiscord("/say *hello* @everyone"));
         assertEquals("/say hello world", CommandFilter.sanitizeForDiscord("/say hello\nworld"));
-        assertEquals("/say \\<@123456789\\>", CommandFilter.sanitizeForDiscord("/say <@123456789>"));
+        assertEquals("/say \\<\\@123456789\\>", CommandFilter.sanitizeForDiscord("/say <@123456789>"));
     }
 }
