@@ -15,6 +15,7 @@ java {
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
     maven { url = 'https://repo.papermc.io/repository/maven-public/' }
 }
@@ -36,8 +37,21 @@ tasks.named('compileJava', JavaCompile).configure {
     options.release = 8
 }
 
+tasks.named('compileTestJava', JavaCompile).configure {
+    options.release = JavaLanguageVersion.current()
+}
+
+configurations.configureEach {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 test {
     useJUnitPlatform()
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat 'full'
+    }
+    maxParallelForks = 1
 }
 
 jar {
