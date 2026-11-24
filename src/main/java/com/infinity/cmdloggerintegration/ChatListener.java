@@ -32,7 +32,6 @@ public final class ChatListener implements Listener {
                         ? CommandFilter.redactAllArguments(commandLine)
                         : CommandFilter.redactArguments(commandLine, plugin.getConfig().getStringList("redacted-commands")));
 
-        // Snapshot Bukkit state on the server thread; the bounded executor does network I/O.
         final String worldName = player.getWorld().getName();
         final boolean operator = player.isOp();
         final String title = plugin.getEmbedTitle();
@@ -77,7 +76,6 @@ public final class ChatListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onConsoleCommand(ServerCommandEvent event) {
         if (!plugin.getConfig().getBoolean("log-console-commands", false)) return;
-        // Deliberately exclude command blocks and other non-console senders.
         if (!(event.getSender() instanceof ConsoleCommandSender)) return;
 
         String commandLine = event.getCommand();

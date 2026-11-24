@@ -21,7 +21,6 @@ repositories {
 }
 
 dependencies {
-    // Use Spigot's published API snapshots consistently across all matrix versions.
     compileOnly "org.spigotmc:spigot-api:${targetApiVersion}-R0.1-SNAPSHOT"
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -31,14 +30,11 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-// The plugin itself must remain Java 8 bytecode. Tests may use the modern JDK
-// APIs provided by the CI toolchain (for example List.of and String.repeat).
 tasks.named('compileJava', JavaCompile).configure {
     options.release = 8
 }
 
 tasks.named('compileTestJava', JavaCompile).configure {
-    // Tests run on the CI toolchain JDK; do not restrict to Java 8 bytecode.
 }
 
 configurations.configureEach {

@@ -53,7 +53,6 @@ public final class CMDLoggerIntegration extends JavaPlugin {
         saveConfig();
     }
 
-    /** Validate the candidate config file before replacing live settings. */
     boolean reloadSettings() {
         File configFile = new File(getDataFolder(), "config.yml");
         YamlConfiguration candidate = YamlConfiguration.loadConfiguration(configFile);
@@ -75,7 +74,6 @@ public final class CMDLoggerIntegration extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        // Never block the server's shutdown thread while waiting for remote network calls.
         if (deliveryExecutor != null) deliveryExecutor.shutdownNow();
     }
 

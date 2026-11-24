@@ -8,7 +8,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class CommandFilterTest {
     @Test void matchesCommandAndArguments() { assertTrue(CommandFilter.shouldIgnore("/plugins list", Collections.singletonList("plugins"))); }
     @Test void matchesCaseInsensitivelyAndNamespacedCommands() {
-        // Full namespace-qualified labels must be listed explicitly; the bare root no longer matches namespaced forms.
         assertTrue(CommandFilter.shouldIgnore("/minecraft:PLUGINS", Arrays.asList("minecraft:plugins")));
         assertFalse(CommandFilter.shouldIgnore("/minecraft:PLUGINS", Arrays.asList("plugins")));
         assertTrue(CommandFilter.shouldIgnore("/Essentials:Msg", Arrays.asList("essentials:msg")));

@@ -2,7 +2,6 @@ package com.infinity.cmdloggerintegration;
 
 import java.net.URI;
 
-/** Strict, side-effect-free validation for Discord webhook URLs. */
 final class WebhookUrlValidator {
     private WebhookUrlValidator() { }
 
