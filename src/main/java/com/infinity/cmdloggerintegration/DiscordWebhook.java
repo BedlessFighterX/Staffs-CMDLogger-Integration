@@ -12,7 +12,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Minimal Discord webhook client with bounded network timeouts and JSON escaping. */
 public final class DiscordWebhook {
     private final String url;
     private String username;
@@ -59,8 +58,6 @@ public final class DiscordWebhook {
         byte[] payload = body.toString().getBytes(StandardCharsets.UTF_8);
         IOException lastFailure = null;
 
-        // Retry only transient responses. The caller already runs on the bounded
-        // delivery executor, so backoff never blocks the Minecraft server thread.
         for (int attempt = 1; attempt <= 3; attempt++) {
             HttpsURLConnection connection = null;
             try {
@@ -115,7 +112,6 @@ public final class DiscordWebhook {
         throw lastFailure == null ? new IOException("Discord webhook delivery failed") : lastFailure;
     }
 
-    /** Validate Discord's 6,000-character combined textual embed limit before network I/O. */
     static void validateEmbedCharacterLimit(List<EmbedObject> embeds) {
         int total = 0;
         for (EmbedObject embed : embeds) {
@@ -134,8 +130,6 @@ public final class DiscordWebhook {
     }
 
     private static boolean isTransientNetworkFailure(IOException ex) {
-        // HTTP status failures are handled explicitly above; IO failures such as
-        // timeouts and connection resets are safe to retry a limited number of times.
         return !(ex.getMessage() != null && ex.getMessage().startsWith("Discord webhook returned HTTP "));
     }
 
@@ -146,7 +140,6 @@ public final class DiscordWebhook {
                 long seconds = Long.parseLong(retryAfter.trim());
                 return seconds <= 0L ? 0L : Math.min(seconds, 5L) * 1000L;
             } catch (NumberFormatException ignored) {
-                // Discord may omit or change this header; use bounded backoff below.
             }
         }
         return Math.min(250L * (1L << (attempt - 1)), 2000L);

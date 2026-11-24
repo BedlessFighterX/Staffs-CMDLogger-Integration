@@ -9,18 +9,18 @@ def targetApiVersion = providers.gradleProperty('serverApiVersion').getOrElse('1
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
+        languageVersion = JavaLanguageVersion.current()
     }
 }
 
 repositories {
     mavenCentral()
+    mavenLocal()
     maven { url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' }
     maven { url = 'https://repo.papermc.io/repository/maven-public/' }
 }
 
 dependencies {
-    // Use Spigot's published API snapshots consistently across all matrix versions.
     compileOnly "org.spigotmc:spigot-api:${targetApiVersion}-R0.1-SNAPSHOT"
     testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -30,14 +30,24 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
-// The plugin itself must remain Java 8 bytecode. Tests may use the modern JDK
-// APIs provided by the CI toolchain (for example List.of and String.repeat).
 tasks.named('compileJava', JavaCompile).configure {
     options.release = 8
 }
 
+tasks.named('compileTestJava', JavaCompile).configure {
+}
+
+configurations.configureEach {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
 test {
     useJUnitPlatform()
+    testLogging {
+        events 'failed', 'skipped'
+        exceptionFormat 'full'
+    }
+    maxParallelForks = 1
 }
 
 jar {

@@ -53,7 +53,7 @@ public final class MainCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(ChatColor.GRAY + "Ignored players: " + ChatColor.WHITE + plugin.getConfig().getStringList("ignored-players").size());
             sender.sendMessage(ChatColor.GRAY + "Console auditing: " + (plugin.getConfig().getBoolean("log-console-commands", false) ? ChatColor.GREEN + "enabled" : ChatColor.YELLOW + "disabled"));
             sender.sendMessage(ChatColor.GRAY + "Global argument redaction: " +
-                    (plugin.getConfig().getBoolean("redact-all-arguments", false) ? ChatColor.GREEN + "enabled" : ChatColor.YELLOW + "disabled"));
+                    (plugin.getConfig().getBoolean("redact-all-arguments", true) ? ChatColor.GREEN + "enabled" : ChatColor.YELLOW + "disabled"));
             sender.sendMessage(ChatColor.GRAY + "Delivery queue: " + ChatColor.WHITE + plugin.getQueueDepth() + "/" + plugin.getQueueCapacity());
             sender.sendMessage(ChatColor.GRAY + "Completed delivery tasks: " + ChatColor.WHITE + plugin.getCompletedDeliveryTasks());
             return true;

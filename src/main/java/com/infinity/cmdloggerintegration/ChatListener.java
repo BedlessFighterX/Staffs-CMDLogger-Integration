@@ -17,7 +17,7 @@ public final class ChatListener implements Listener {
 
     public ChatListener(CMDLoggerIntegration plugin) { this.plugin = plugin; }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = false)
     public void onCommandSend(PlayerCommandPreprocessEvent event) {
         Player player = event.getPlayer();
         if (!player.hasPermission("cmdlogger.staff")) return;
@@ -32,7 +32,6 @@ public final class ChatListener implements Listener {
                         ? CommandFilter.redactAllArguments(commandLine)
                         : CommandFilter.redactArguments(commandLine, plugin.getConfig().getStringList("redacted-commands")));
 
-        // Snapshot Bukkit state on the server thread; the bounded executor does network I/O.
         final String worldName = player.getWorld().getName();
         final boolean operator = player.isOp();
         final String title = plugin.getEmbedTitle();
@@ -45,6 +44,9 @@ public final class ChatListener implements Listener {
         final String serverName = plugin.getConfig().getString("embed.server-name", "Minecraft Server");
         final Instant occurredAt = Instant.now();
 
+        if (!WebhookUrlValidator.isValid(webhookUrl)) {
+            return;
+        }
         plugin.submitDelivery(() -> {
             try {
                 DiscordWebhook webhook = new DiscordWebhook(webhookUrl);
@@ -74,7 +76,6 @@ public final class ChatListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onConsoleCommand(ServerCommandEvent event) {
         if (!plugin.getConfig().getBoolean("log-console-commands", false)) return;
-        // Deliberately exclude command blocks and other non-console senders.
         if (!(event.getSender() instanceof ConsoleCommandSender)) return;
 
         String commandLine = event.getCommand();
@@ -92,6 +93,9 @@ public final class ChatListener implements Listener {
         final String serverName = plugin.getConfig().getString("embed.server-name", "Minecraft Server");
         final Instant occurredAt = Instant.now();
 
+        if (!WebhookUrlValidator.isValid(webhookUrl)) {
+            return;
+        }
         plugin.submitDelivery(() -> {
             try {
                 DiscordWebhook webhook = new DiscordWebhook(webhookUrl);

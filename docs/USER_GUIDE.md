@@ -61,19 +61,12 @@ Treat the webhook URL like a password. Anyone with the URL may be able to post t
 The following is the default configuration shipped with version 3.3.0:
 
 ```yaml
-# Treat this URL as a secret; anyone who has it can post to the target Discord channel.
-# Prefer setting this privately and never commit a live webhook URL.
 webhook-url: 'your-webhook-url'
 
-# Privacy-first default: only command roots are sent; all arguments stay on the server.
-# Set to false only if your audit policy explicitly requires arguments, and configure redacted-commands.
 redact-all-arguments: true
 
-# Console commands are not logged unless explicitly enabled.
-# Global argument redaction still applies to console commands.
 log-console-commands: false
 
-# Player names listed here are excluded from command logging (case-insensitive).
 ignored-players: []
 
 embed:
@@ -85,11 +78,9 @@ embed:
   show-timestamp: true
   show-operator-status: true
 
-# Root commands to exclude entirely. Matching ignores case, leading slash, namespace, and arguments.
 ignored-commands:
   - 'examplecommand1'
 
-# When redact-all-arguments is disabled, these commands still have every argument redacted.
 redacted-commands:
   - 'login'
   - 'register'

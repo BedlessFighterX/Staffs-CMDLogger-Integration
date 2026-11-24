@@ -22,10 +22,9 @@ public final class CMDLoggerIntegration extends JavaPlugin {
     public void onEnable() {
         saveDefaultConfig();
         applyMissingDefaults();
+
         if (!isWebhookConfigured()) {
-            getLogger().severe("Invalid webhook-url. Set a valid Discord webhook URL in config.yml; plugin disabled.");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
+            getLogger().warning("Discord webhook is not configured. Command capture will run without Discord delivery until a valid webhook-url is set.");
         }
 
         deliveryExecutor = new ThreadPoolExecutor(
@@ -54,19 +53,27 @@ public final class CMDLoggerIntegration extends JavaPlugin {
         saveConfig();
     }
 
-    /** Validate the candidate file before replacing live settings. */
     boolean reloadSettings() {
         File configFile = new File(getDataFolder(), "config.yml");
         YamlConfiguration candidate = YamlConfiguration.loadConfiguration(configFile);
-        if (!WebhookUrlValidator.isValid(candidate.getString("webhook-url", ""))) return false;
+        String candidateUrl = candidate.getString("webhook-url", "");
+        if (!isPlaceholderOrValid(candidateUrl)) return false;
         reloadConfig();
         applyMissingDefaults();
-        return isWebhookConfigured();
+        return true;
+    }
+
+    private static boolean isPlaceholderOrValid(String url) {
+        return WebhookUrlValidator.isValid(url) || isPlaceholder(url);
+    }
+
+    private static boolean isPlaceholder(String value) {
+        return value == null || value.trim().isEmpty() ||
+                "your-webhook-url".equalsIgnoreCase(value.trim());
     }
 
     @Override
     public void onDisable() {
-        // Never block the server's shutdown thread while waiting for remote network calls.
         if (deliveryExecutor != null) deliveryExecutor.shutdownNow();
     }
 

@@ -14,14 +14,12 @@ final class CommandFilter {
         if (value.startsWith("/")) value = value.substring(1);
         int space = firstWhitespace(value);
         String root = space < 0 ? value : value.substring(0, space);
-        int colon = root.indexOf(':');
-        String plain = colon < 0 ? root : root.substring(colon + 1);
 
         for (String item : roots) {
             if (item == null) continue;
             String candidate = item.trim().toLowerCase(Locale.ROOT);
             while (candidate.startsWith("/")) candidate = candidate.substring(1);
-            if (!candidate.isEmpty() && (candidate.equals(root) || candidate.equals(plain))) return true;
+            if (!candidate.isEmpty() && candidate.equals(root)) return true;
         }
         return false;
     }
@@ -45,11 +43,6 @@ final class CommandFilter {
         return "/" + root + (space < 0 ? "" : " [arguments redacted]");
     }
 
-    /**
-     * Makes untrusted command text safe to display inside a Discord embed.
-     * Mentions are disabled at payload level too; escaping prevents visual spoofing
-     * with Markdown and collapses control characters into a single line.
-     */
     static String sanitizeForDiscord(String value) {
         if (value == null) return "(unknown)";
         StringBuilder safe = new StringBuilder(Math.min(value.length() + 16, 2048));
@@ -61,7 +54,7 @@ final class CommandFilter {
                 }
                 continue;
             }
-            if ("\\*_~`|>#[]()@".indexOf(c) >= 0) safe.append('\\');
+            if ("\\*_~`|<>#[]()@".indexOf(c) >= 0) safe.append('\\');
             safe.append(c);
         }
         return safe.toString().trim();
